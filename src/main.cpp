@@ -42,30 +42,33 @@ void setup()
   Serial.begin(9600);	// Debugging only
   Serial.println("setup");
 
-  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(BUTTON_1, INPUT);
   pinMode(BUTTON_2, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // TRANSMITTER SETUP
+  Serial.println("setup transmitter");
   vw_set_tx_pin(transmit_pin);
   vw_setup(2000);	 // Bits per sec
-  randomSeed(analogRead(14));
+  Serial.println("transmitter ready");
 
   // COLOR SENSOR SETUP
   if (tcs.begin()) {
-    // Serial.println("Found color sensor");
+    Serial.println("Found color sensor");
     tcs.setInterrupt(true);
   } else {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(100000000);
     Serial.println("No color sensor found!");
+    while (true) {
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(200);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(200);
+    }
   }
 
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
-// uint_fast16_t currentTime;
-// uint_fast16_t readTime = 0;
 bool readComplete = false;
 
 int button1;
@@ -121,7 +124,7 @@ void loop()
 }
 
 void stealColor() {
-  byte hue = 128;
+  byte hue = readHue();
   readComplete = true;
   sendMessage(messageID, colorReadMessage, hue);
 }
