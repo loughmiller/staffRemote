@@ -16,6 +16,8 @@ const byte brightnessDownMessage = 3;
 const byte densityUpMessage = 4;
 const byte densityDownMessage = 5;
 
+const uint_fast16_t touchThreshold = 1300;
+
 void stealColor();
 void clearColor();
 void brightnessUp();
@@ -29,7 +31,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
-// BUTTON POWER PINS
+// BUTTON PINS
 #define BUTTON_1 7
 #define BUTTON_2 8
 #define BUTTON_3 9
@@ -39,8 +41,7 @@ uint8_t calcHue(float r, float g, float b);
 // TOUCH BUTTONS
 #define TOUCH_1 0
 
-uint_fast8_t mode = 0;
-const uint_fast8_t modes = 3;
+bool colorSensorOn = true;
 
 void setup()
 {
@@ -48,7 +49,7 @@ void setup()
   Serial.begin(9600);	// Debugging only
   Serial.println("setup");
 
-  pinMode(BUTTON_1, INPUT_PULLUP);
+  pinMode(BUTTON_1, INPUT_PULLUP);  // Use pullup where buttons connect to ground on press
   pinMode(BUTTON_2, INPUT_PULLUP);
   pinMode(BUTTON_3, INPUT_PULLUP);
   pinMode(BUTTON_4, INPUT_PULLUP);
@@ -74,18 +75,16 @@ void setup()
       delay(200);
     }
   }
-
-  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 bool readComplete = false;
 
-int button1;
-int button2;
-int button3;
-int button4;
-int button5;
-int touch1;
+int button1 = 0;
+int button2 = 0;
+int button3 = 0;
+int button4 = 0;
+int button5 = 0;
+int touch1 = 0;
 
 void loop()
 {
@@ -94,7 +93,6 @@ void loop()
   button3 = !digitalRead(BUTTON_3);
   button4 = !digitalRead(BUTTON_4);
   button5 = !digitalRead(BUTTON_5);
-  touch1 = touchRead(TOUCH_1);
 
   // Serial.print(mode);
   // Serial.print("\t");
@@ -113,44 +111,56 @@ void loop()
   Serial.println("");
   // currentTime = millis();
 
-  // if (!button1 && !button2) {
-  //   digitalWrite(LED_BUILTIN, LOW);
-  //   readComplete = false;
-  //   messageID++;
-  // } else {
-  //   digitalWrite(LED_BUILTIN, HIGH);
+  if (button1) {
+    brightnessUp();
+  }
 
-  //   if (button1 && button2) {
-  //     mode = (mode + 1) % modes;
-  //   } else {
-  //     switch (mode) {
-  //       case 0:
-  //         if (button1) { stealColor(); }
-  //         if (button2) { clearColor(); }
-  //       break;
-  //       case 1:
-  //         if (button1) { brightnessUp(); }
-  //         if (button2) { brightnessDown(); }
-  //         messageID++;
-  //       break;
-  //       case 2:
-  //         if (button1) { densityUp(); }
-  //         if (button2) { densityDown(); }
-  //         messageID++;
-  //       break;
-  //     }
-  //   }
+  if (button2) {
+    brightnessDown();
+  }
 
-  //   // debounce
-  //   delay(300);
-  // }
+  if (button3) {
+    densityUp();
+  }
 
-  delay(500);
+  if (button4) {
+    densityUp();
+  }
+
+  if (button5) {
+    colorSensorOn = !colorSensorOn;
+    if (!colorSensorOn) {
+      clearColor();
+    }
+  }
+
+  if (colorSensorOn) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    touch1 = touchRead(TOUCH_1);
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+    touch1 = 0;
+  }
+
+  if (touch1 >= touchThreshold && !readComplete) {
+    stealColor();
+    readComplete = true;
+  }
+
+  if (touch1 < touchThreshold) {
+    readComplete = false;
+  }
+
+  // debounce
+  if (button1 || button2 || button3 || button4 || button5) {
+    delay(300);
+  }
+
+  delay(50);
 }
 
 void stealColor() {
   byte hue = readHue();
-  readComplete = true;
   sendMessage(messageID, colorReadMessage, hue);
 }
 
