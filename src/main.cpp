@@ -29,9 +29,15 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
-// BUTTON POWER PIN
-#define BUTTON_1 20
-#define BUTTON_2 17
+// BUTTON POWER PINS
+#define BUTTON_1 7
+#define BUTTON_2 8
+#define BUTTON_3 9
+#define BUTTON_4 14
+#define BUTTON_5 15
+
+// TOUCH BUTTONS
+#define TOUCH_1 0
 
 uint_fast8_t mode = 0;
 const uint_fast8_t modes = 3;
@@ -42,8 +48,11 @@ void setup()
   Serial.begin(9600);	// Debugging only
   Serial.println("setup");
 
-  pinMode(BUTTON_1, INPUT);
-  pinMode(BUTTON_2, INPUT);
+  pinMode(BUTTON_1, INPUT_PULLUP);
+  pinMode(BUTTON_2, INPUT_PULLUP);
+  pinMode(BUTTON_3, INPUT_PULLUP);
+  pinMode(BUTTON_4, INPUT_PULLUP);
+  pinMode(BUTTON_5, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
 
   // TRANSMITTER SETUP
@@ -73,54 +82,70 @@ bool readComplete = false;
 
 int button1;
 int button2;
+int button3;
+int button4;
+int button5;
+int touch1;
 
 void loop()
 {
-  button1 = digitalRead(BUTTON_1);
-  button2 = digitalRead(BUTTON_2);
+  button1 = !digitalRead(BUTTON_1);
+  button2 = !digitalRead(BUTTON_2);
+  button3 = !digitalRead(BUTTON_3);
+  button4 = !digitalRead(BUTTON_4);
+  button5 = !digitalRead(BUTTON_5);
+  touch1 = touchRead(TOUCH_1);
 
-  Serial.print(mode);
-  Serial.print("\t");
+  // Serial.print(mode);
+  // Serial.print("\t");
   Serial.print(button1);
   Serial.print("\t");
-  Serial.println(button2);
+  Serial.print(button2);
+  Serial.print("\t");
+  Serial.print(button3);
+  Serial.print("\t");
+  Serial.print(button4);
+  Serial.print("\t");
+  Serial.print(button5);
+  Serial.print("\t");
+  Serial.print(touch1);
 
+  Serial.println("");
   // currentTime = millis();
 
+  // if (!button1 && !button2) {
+  //   digitalWrite(LED_BUILTIN, LOW);
+  //   readComplete = false;
+  //   messageID++;
+  // } else {
+  //   digitalWrite(LED_BUILTIN, HIGH);
 
-  if (!button1 && !button2) {
-    digitalWrite(LED_BUILTIN, LOW);
-    readComplete = false;
-    messageID++;
-  } else {
-    digitalWrite(LED_BUILTIN, HIGH);
+  //   if (button1 && button2) {
+  //     mode = (mode + 1) % modes;
+  //   } else {
+  //     switch (mode) {
+  //       case 0:
+  //         if (button1) { stealColor(); }
+  //         if (button2) { clearColor(); }
+  //       break;
+  //       case 1:
+  //         if (button1) { brightnessUp(); }
+  //         if (button2) { brightnessDown(); }
+  //         messageID++;
+  //       break;
+  //       case 2:
+  //         if (button1) { densityUp(); }
+  //         if (button2) { densityDown(); }
+  //         messageID++;
+  //       break;
+  //     }
+  //   }
 
-    if (button1 && button2) {
-      mode = (mode + 1) % modes;
-    } else {
-      switch (mode) {
-        case 0:
-          if (button1) { stealColor(); }
-          if (button2) { clearColor(); }
-        break;
-        case 1:
-          if (button1) { brightnessUp(); }
-          if (button2) { brightnessDown(); }
-          messageID++;
-        break;
-        case 2:
-          if (button1) { densityUp(); }
-          if (button2) { densityDown(); }
-          messageID++;
-        break;
-      }
-    }
+  //   // debounce
+  //   delay(300);
+  // }
 
-    // debounce
-    delay(300);
-  }
-
-  delay(100);
+  delay(500);
 }
 
 void stealColor() {
