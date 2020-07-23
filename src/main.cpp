@@ -7,7 +7,7 @@
 
 // RADIO TRANSMITTER
 const int transmit_pin = 12;
-byte messageID = 0;
+uint8_t messageID = 0;
 
 const byte colorReadMessage = 0;
 const byte colorClearMessage = 1;
@@ -16,7 +16,7 @@ const byte brightnessDownMessage = 3;
 const byte densityUpMessage = 4;
 const byte densityDownMessage = 5;
 
-const uint_fast16_t touchThreshold = 1300;
+const float touchThreshold = 1.25;
 
 void stealColor();
 void clearColor();
@@ -24,7 +24,7 @@ void brightnessUp();
 void brightnessDown();
 void densityUp();
 void densityDown();
-void sendMessage(byte messageID, byte messageType, byte data);
+void sendMessage(byte messageType, byte data);
 
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
@@ -39,7 +39,7 @@ uint8_t calcHue(float r, float g, float b);
 #define BUTTON_5 15
 
 // TOUCH BUTTONS
-#define TOUCH_1 0
+#define TOUCH_1 17
 
 bool colorSensorOn = true;
 
@@ -85,6 +85,7 @@ int button3 = 0;
 int button4 = 0;
 int button5 = 0;
 int touch1 = 0;
+uint_fast16_t touchAvg = 10000;
 
 void loop()
 {
@@ -96,19 +97,19 @@ void loop()
 
   // Serial.print(mode);
   // Serial.print("\t");
-  Serial.print(button1);
-  Serial.print("\t");
-  Serial.print(button2);
-  Serial.print("\t");
-  Serial.print(button3);
-  Serial.print("\t");
-  Serial.print(button4);
-  Serial.print("\t");
-  Serial.print(button5);
-  Serial.print("\t");
-  Serial.print(touch1);
+  // Serial.print(button1);
+  // Serial.print("\t");
+  // Serial.print(button2);
+  // Serial.print("\t");
+  // Serial.print(button3);
+  // Serial.print("\t");
+  // Serial.print(button4);
+  // Serial.print("\t");
+  // Serial.print(button5);
+  // Serial.print("\t");
+  // Serial.print(touch1);
 
-  Serial.println("");
+  // Serial.println("");
   // currentTime = millis();
 
   if (button1) {
@@ -124,12 +125,12 @@ void loop()
   }
 
   if (button4) {
-    densityUp();
+    densityDown();
   }
 
   if (button5) {
     colorSensorOn = !colorSensorOn;
-    if (!colorSensorOn) {
+    if (colorSensorOn) {
       clearColor();
     }
   }
@@ -137,22 +138,23 @@ void loop()
   if (colorSensorOn) {
     digitalWrite(LED_BUILTIN, HIGH);
     touch1 = touchRead(TOUCH_1);
+    touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
   } else {
     digitalWrite(LED_BUILTIN, LOW);
-    touch1 = 0;
+    touch1 = touchAvg;
   }
 
-  if (touch1 >= touchThreshold && !readComplete) {
+  if (touch1 >= touchAvg * touchThreshold && !readComplete) {
     stealColor();
     readComplete = true;
   }
 
-  if (touch1 < touchThreshold) {
+  if (touch1 < touchAvg * touchThreshold) {
     readComplete = false;
   }
 
   // debounce
-  if (button1 || button2 || button3 || button4 || button5) {
+  if (button1 || button2 || button3 || button4 || button5 || readComplete) {
     delay(300);
   }
 
@@ -161,34 +163,42 @@ void loop()
 
 void stealColor() {
   byte hue = readHue();
-  sendMessage(messageID, colorReadMessage, hue);
+  sendMessage(colorReadMessage, hue);
 }
 
 void clearColor() {
-  sendMessage(messageID, colorClearMessage, 0);
+  sendMessage(colorClearMessage, 0);
 }
 
 void brightnessUp() {
-  sendMessage(messageID, brightnessUpMessage, 0);
+  sendMessage(brightnessUpMessage, 0);
 }
 
 void brightnessDown() {
-  sendMessage(messageID, brightnessDownMessage, 0);
+  sendMessage(brightnessDownMessage, 0);
 }
 
 void densityUp() {
-  sendMessage(messageID, densityUpMessage, 0);
+  sendMessage(densityUpMessage, 0);
 }
 
 void densityDown() {
-  sendMessage(messageID, densityDownMessage, 0);
+  sendMessage(densityDownMessage, 0);
 }
 
-void sendMessage(byte messageID, byte messageType, byte data) {
+void sendMessage(byte messageType, byte data) {
     byte msg[3] = {messageID, messageType, data};
+
+    Serial.print(messageID);
+    Serial.print("\t");
+    Serial.print(messageType);
+    Serial.print("\t");
+    Serial.print(data);
+    Serial.println("");
 
     vw_send((uint8_t *)msg, 3);
     vw_wait_tx(); // Wait until the whole message is gone
+    messageID++;
 }
 
 uint8_t readHue() {
