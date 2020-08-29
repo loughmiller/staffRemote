@@ -32,13 +32,7 @@ uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
 // BUTTON PINS
-#define BUTTON_1 7
-#define BUTTON_2 8
-#define BUTTON_3 9
-#define BUTTON_4 14
-#define BUTTON_5 15
-
-// TOUCH BUTTONS
+#define BUTTONS_PIN A0
 #define TOUCH_1 17
 
 bool colorSensorOn = true;
@@ -49,11 +43,7 @@ void setup()
   Serial.begin(9600);	// Debugging only
   Serial.println("setup");
 
-  pinMode(BUTTON_1, INPUT_PULLUP);  // Use pullup where buttons connect to ground on press
-  pinMode(BUTTON_2, INPUT_PULLUP);
-  pinMode(BUTTON_3, INPUT_PULLUP);
-  pinMode(BUTTON_4, INPUT_PULLUP);
-  pinMode(BUTTON_5, INPUT_PULLUP);
+  pinMode(BUTTONS_PIN, INPUT);  // Use pullup where buttons connect to ground on press
   pinMode(LED_BUILTIN, OUTPUT);
 
   // TRANSMITTER SETUP
@@ -62,38 +52,29 @@ void setup()
   vw_setup(2000);	 // Bits per sec
   Serial.println("transmitter ready");
 
-  // COLOR SENSOR SETUP
-  if (tcs.begin()) {
-    Serial.println("Found color sensor");
-    tcs.setInterrupt(true);
-  } else {
-    Serial.println("No color sensor found!");
-    while (true) {
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(200);
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(200);
-    }
-  }
+//   // COLOR SENSOR SETUP
+//   if (tcs.begin()) {
+//     Serial.println("Found color sensor");
+//     tcs.setInterrupt(true);
+//   } else {
+//     Serial.println("No color sensor found!");
+//     while (true) {
+//       digitalWrite(LED_BUILTIN, LOW);
+//       delay(200);
+//       digitalWrite(LED_BUILTIN, HIGH);
+//       delay(200);
+//     }
+//   }
 }
 
 bool readComplete = false;
 
-int button1 = 0;
-int button2 = 0;
-int button3 = 0;
-int button4 = 0;
-int button5 = 0;
+int buttons = 0;
 int touch1 = 0;
 uint_fast16_t touchAvg = 10000;
 
-void loop()
-{
-  button1 = !digitalRead(BUTTON_1);
-  button2 = !digitalRead(BUTTON_2);
-  button3 = !digitalRead(BUTTON_3);
-  button4 = !digitalRead(BUTTON_4);
-  button5 = !digitalRead(BUTTON_5);
+void loop() {
+  buttons = analogRead(BUTTONS_PIN);
 
   // Serial.print(mode);
   // Serial.print("\t");
@@ -109,56 +90,57 @@ void loop()
   // Serial.print("\t");
   // Serial.print(touch1);
 
-  // Serial.println("");
+  Serial.print(buttons);
+  Serial.println("");
   // currentTime = millis();
 
-  if (button1) {
-    brightnessUp();
-  }
+  // if (button1) {
+  //   brightnessUp();
+  // }
 
-  if (button2) {
-    brightnessDown();
-  }
+  // if (button2) {
+  //   brightnessDown();
+  // }
 
-  if (button3) {
-    densityUp();
-  }
+  // if (button3) {
+  //   densityUp();
+  // }
 
-  if (button4) {
-    densityDown();
-  }
+  // if (button4) {
+  //   densityDown();
+  // }
 
-  if (button5) {
-    colorSensorOn = !colorSensorOn;
-    if (colorSensorOn) {
-      clearColor();
-    }
-  }
+  // if (button5) {
+  //   colorSensorOn = !colorSensorOn;
+  //   if (colorSensorOn) {
+  //     clearColor();
+  //   }
+  // }
 
-  if (colorSensorOn) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    touch1 = touchRead(TOUCH_1);
-    touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
-  } else {
-    digitalWrite(LED_BUILTIN, LOW);
-    touch1 = touchAvg;
-  }
+  // if (colorSensorOn) {
+  //   digitalWrite(LED_BUILTIN, HIGH);
+  //   touch1 = touchRead(TOUCH_1);
+  //   touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
+  // } else {
+  //   digitalWrite(LED_BUILTIN, LOW);
+  //   touch1 = touchAvg;
+  // }
 
-  if (touch1 >= touchAvg * touchThreshold && !readComplete) {
-    stealColor();
-    readComplete = true;
-  }
+  // if (touch1 >= touchAvg * touchThreshold && !readComplete) {
+  //   stealColor();
+  //   readComplete = true;
+  // }
 
-  if (touch1 < touchAvg * touchThreshold) {
-    readComplete = false;
-  }
+  // if (touch1 < touchAvg * touchThreshold) {
+  //   readComplete = false;
+  // }
 
-  // debounce
-  if (button1 || button2 || button3 || button4 || button5 || readComplete) {
-    delay(300);
-  }
+  // // debounce
+  // if (button1 || button2 || button3 || button4 || button5 || readComplete) {
+  //   delay(300);
+  // }
 
-  delay(50);
+  delay(500);
 }
 
 void stealColor() {
