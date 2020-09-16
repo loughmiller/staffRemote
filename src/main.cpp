@@ -6,7 +6,10 @@
 #include <Adafruit_TCS34725.h>
 
 // RADIO TRANSMITTER
-const int transmit_pin = 12;
+const int tx_vcc_pin = 10;
+const int transmit_pin = 11;
+const int tx_gnd_pin = 12;
+
 uint8_t messageID = 0;
 
 const byte colorReadMessage = 0;
@@ -18,6 +21,7 @@ const byte densityDownMessage = 5;
 
 const float touchThreshold = 1.25;
 
+void debounce();
 void stealColor();
 void clearColor();
 void brightnessUp();
@@ -32,18 +36,31 @@ uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
 // BUTTON PINS
-#define BUTTONS_PIN A0
+const int buttons_vcc_pin = 15;
+#define BUTTONS_INPUT A0
 #define TOUCH_1 17
 
 bool colorSensorOn = true;
 
 void setup()
 {
+  // POWER PERIPHERALS
+  pinMode(tx_gnd_pin, OUTPUT);
+  pinMode(tx_vcc_pin, OUTPUT);
+  pinMode(buttons_vcc_pin, OUTPUT);
+  digitalWrite(tx_gnd_pin, LOW);
+  digitalWrite(tx_vcc_pin, HIGH);
+  digitalWrite(buttons_vcc_pin, HIGH);
+
+
+  // SETUP SERIAL CONNECTION FOR LOGGING
   delay(6000);
   Serial.begin(9600);	// Debugging only
   Serial.println("setup");
 
-  pinMode(BUTTONS_PIN, INPUT);  // Use pullup where buttons connect to ground on press
+  // Use pulldown where buttons connect to vcc on press with resistors
+  // to distingish different buttons on one input line
+  pinMode(BUTTONS_INPUT, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
 
   // TRANSMITTER SETUP
@@ -68,54 +85,61 @@ void setup()
 }
 
 bool readComplete = false;
+bool buttonStabalizing = false;
 
 int buttons = 0;
 int touch1 = 0;
 uint_fast16_t touchAvg = 10000;
 
 void loop() {
-  buttons = analogRead(BUTTONS_PIN);
+  buttons = analogRead(BUTTONS_INPUT);
 
-  // Serial.print(mode);
-  // Serial.print("\t");
-  // Serial.print(button1);
-  // Serial.print("\t");
-  // Serial.print(button2);
-  // Serial.print("\t");
-  // Serial.print(button3);
-  // Serial.print("\t");
-  // Serial.print(button4);
-  // Serial.print("\t");
-  // Serial.print(button5);
-  // Serial.print("\t");
-  // Serial.print(touch1);
+  if (buttons < 350) {
+    buttonStabalizing = false;
+    delay(50);
+    return;
+  }
 
-  Serial.print(buttons);
-  Serial.println("");
-  // currentTime = millis();
+  if (!buttonStabalizing) {
+    buttonStabalizing = true;
+    delay(50);
+    return;
+  }
 
-  // if (button1) {
-  //   brightnessUp();
-  // }
+  if (buttons > 950) {
+    colorSensorOn = !colorSensorOn;
+    if (colorSensorOn) {
+      clearColor();
+    }
+    debounce();
+    return;
+  }
 
-  // if (button2) {
-  //   brightnessDown();
-  // }
+  if (buttons > 775) {
+    brightnessDown();
+    debounce();
+    return;
+  }
 
-  // if (button3) {
-  //   densityUp();
-  // }
+  if (buttons > 650) {
+    brightnessUp();
+    debounce();
+    return;
+  }
 
-  // if (button4) {
-  //   densityDown();
-  // }
+  if (buttons > 450) {
+    densityUp();
+    debounce();
+    return;
+  }
 
-  // if (button5) {
-  //   colorSensorOn = !colorSensorOn;
-  //   if (colorSensorOn) {
-  //     clearColor();
-  //   }
-  // }
+  if (buttons > 350) {
+    Serial.println(buttons);
+    densityDown();
+    debounce();
+    return;
+  }
+
 
   // if (colorSensorOn) {
   //   digitalWrite(LED_BUILTIN, HIGH);
@@ -134,37 +158,41 @@ void loop() {
   // if (touch1 < touchAvg * touchThreshold) {
   //   readComplete = false;
   // }
+}
 
-  // // debounce
-  // if (button1 || button2 || button3 || button4 || button5 || readComplete) {
-  //   delay(300);
-  // }
-
-  delay(500);
+void debounce() {
+  delay(1);
 }
 
 void stealColor() {
-  byte hue = readHue();
+  byte hue = 0; // readHue();
+
+  Serial.println("stealColor");
   sendMessage(colorReadMessage, hue);
 }
 
 void clearColor() {
+  Serial.println("clearColor");
   sendMessage(colorClearMessage, 0);
 }
 
 void brightnessUp() {
+  Serial.println("brightnessUp");
   sendMessage(brightnessUpMessage, 0);
 }
 
 void brightnessDown() {
+  Serial.println("brightnessDown");
   sendMessage(brightnessDownMessage, 0);
 }
 
 void densityUp() {
+  Serial.println("densityUp");
   sendMessage(densityUpMessage, 0);
 }
 
 void densityDown() {
+  Serial.println("densityDown");
   sendMessage(densityDownMessage, 0);
 }
 
