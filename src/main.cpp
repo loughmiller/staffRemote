@@ -6,11 +6,13 @@
 #include <Adafruit_TCS34725.h>
 
 // RADIO TRANSMITTER
-const int tx_vcc_pin = 10;
-const int transmit_pin = 11;
-const int tx_gnd_pin = 12;
+const byte authByteStart = 117;
+const byte authByteEnd = 115;
 
-uint8_t messageID = 0;
+const uint_fast8_t transmit_pin = 12;
+const uint_fast16_t buttonDelay = 300;
+
+uint_fast8_t messageID = 0;
 
 const byte colorReadMessage = 0;
 const byte colorClearMessage = 1;
@@ -44,18 +46,8 @@ bool colorSensorOn = true;
 
 void setup()
 {
-  // POWER PERIPHERALS
-  pinMode(tx_gnd_pin, OUTPUT);
-  pinMode(tx_vcc_pin, OUTPUT);
-  pinMode(buttons_vcc_pin, OUTPUT);
-  digitalWrite(tx_gnd_pin, LOW);
-  digitalWrite(tx_vcc_pin, HIGH);
-  digitalWrite(buttons_vcc_pin, HIGH);
-
-
   // SETUP SERIAL CONNECTION FOR LOGGING
-  delay(6000);
-  Serial.begin(9600);	// Debugging only
+  while(!Serial && millis() < 10000);
   Serial.println("setup");
 
   // Use pulldown where buttons connect to vcc on press with resistors
@@ -87,18 +79,13 @@ void setup()
 bool readComplete = false;
 bool buttonStabalizing = false;
 
-int buttons = 0;
-int touch1 = 0;
+uint_fast16_t buttons = 0;
+uint_fast16_t lastButtons = 0;
+uint_fast16_t touch1 = 0;
 uint_fast16_t touchAvg = 10000;
 
 void loop() {
   buttons = analogRead(BUTTONS_INPUT);
-
-  if (buttons < 350) {
-    buttonStabalizing = false;
-    delay(50);
-    return;
-  }
 
   if (!buttonStabalizing) {
     buttonStabalizing = true;
@@ -109,46 +96,43 @@ void loop() {
   if (buttons > 950) {
     colorSensorOn = !colorSensorOn;
     if (colorSensorOn) {
+      digitalWrite(LED_BUILTIN, HIGH);
       clearColor();
+    } else {
+      digitalWrite(LED_BUILTIN, LOW);
     }
-    debounce();
+    delay(1000);
     return;
   }
 
   if (buttons > 775) {
     brightnessDown();
-    debounce();
     return;
   }
 
   if (buttons > 650) {
     brightnessUp();
-    debounce();
     return;
   }
 
   if (buttons > 450) {
     densityUp();
-    debounce();
     return;
   }
 
   if (buttons > 350) {
-    Serial.println(buttons);
     densityDown();
-    debounce();
     return;
   }
 
-
-  // if (colorSensorOn) {
-  //   digitalWrite(LED_BUILTIN, HIGH);
-  //   touch1 = touchRead(TOUCH_1);
-  //   touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
-  // } else {
-  //   digitalWrite(LED_BUILTIN, LOW);
-  //   touch1 = touchAvg;
-  // }
+  if (colorSensorOn) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    touch1 = touchRead(TOUCH_1);
+    touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+    touch1 = touchAvg;
+  }
 
   // if (touch1 >= touchAvg * touchThreshold && !readComplete) {
   //   stealColor();
@@ -158,57 +142,60 @@ void loop() {
   // if (touch1 < touchAvg * touchThreshold) {
   //   readComplete = false;
   // }
-}
 
-void debounce() {
-  delay(1);
+  buttonStabalizing = false;
+  delay(buttonDelay);
 }
 
 void stealColor() {
   byte hue = 0; // readHue();
 
-  Serial.println("stealColor");
+  // Serial.println("stealColor");
   sendMessage(colorReadMessage, hue);
 }
 
 void clearColor() {
-  Serial.println("clearColor");
+  // Serial.println("clearColor");
   sendMessage(colorClearMessage, 0);
 }
 
 void brightnessUp() {
-  Serial.println("brightnessUp");
+  // Serial.println("brightnessUp");
   sendMessage(brightnessUpMessage, 0);
 }
 
 void brightnessDown() {
-  Serial.println("brightnessDown");
+  // Serial.println("brightnessDown");
   sendMessage(brightnessDownMessage, 0);
 }
 
 void densityUp() {
-  Serial.println("densityUp");
+  // Serial.println("densityUp");
   sendMessage(densityUpMessage, 0);
 }
 
 void densityDown() {
-  Serial.println("densityDown");
+  // Serial.println("densityDown");
   sendMessage(densityDownMessage, 0);
 }
 
 void sendMessage(byte messageType, byte data) {
-    byte msg[3] = {messageID, messageType, data};
+  byte msg[5] = {authByteStart, messageID, messageType, data, authByteEnd};
 
-    Serial.print(messageID);
-    Serial.print("\t");
-    Serial.print(messageType);
-    Serial.print("\t");
-    Serial.print(data);
-    Serial.println("");
+  Serial.print(messageID);
+  Serial.print("\t");
+  Serial.print(messageType);
+  Serial.print("\t");
+  Serial.print(data);
+  Serial.println("");
 
-    vw_send((uint8_t *)msg, 3);
+  for(uint_fast8_t i=0; i<5;i++) {
+    vw_send((uint8_t *)msg, sizeof(msg));
     vw_wait_tx(); // Wait until the whole message is gone
-    messageID++;
+    delay(25);
+  }
+
+  messageID++;
 }
 
 uint8_t readHue() {
