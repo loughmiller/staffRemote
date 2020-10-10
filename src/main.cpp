@@ -61,19 +61,19 @@ void setup()
   vw_setup(2000);	 // Bits per sec
   Serial.println("transmitter ready");
 
-//   // COLOR SENSOR SETUP
-//   if (tcs.begin()) {
-//     Serial.println("Found color sensor");
-//     tcs.setInterrupt(true);
-//   } else {
-//     Serial.println("No color sensor found!");
-//     while (true) {
-//       digitalWrite(LED_BUILTIN, LOW);
-//       delay(200);
-//       digitalWrite(LED_BUILTIN, HIGH);
-//       delay(200);
-//     }
-//   }
+  // COLOR SENSOR SETUP
+  if (tcs.begin()) {
+    Serial.println("Found color sensor");
+    tcs.setInterrupt(true);
+  } else {
+    Serial.println("No color sensor found!");
+    while (true) {
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(200);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(200);
+    }
+  }
 }
 
 bool readComplete = false;
@@ -134,21 +134,21 @@ void loop() {
     touch1 = touchAvg;
   }
 
-  // if (touch1 >= touchAvg * touchThreshold && !readComplete) {
-  //   stealColor();
-  //   readComplete = true;
-  // }
+  if (touch1 >= touchAvg * touchThreshold && !readComplete) {
+    stealColor();
+    readComplete = true;
+  }
 
-  // if (touch1 < touchAvg * touchThreshold) {
-  //   readComplete = false;
-  // }
+  if (touch1 < touchAvg * touchThreshold) {
+    readComplete = false;
+  }
 
   buttonStabalizing = false;
   delay(buttonDelay);
 }
 
 void stealColor() {
-  byte hue = 0; // readHue();
+  byte hue = readHue();
 
   // Serial.println("stealColor");
   sendMessage(colorReadMessage, hue);
