@@ -67,7 +67,7 @@ void setup()
     tcs.setInterrupt(true);
   } else {
     Serial.println("No color sensor found!");
-    while (true) {
+    while (millis() < 20000) {
       digitalWrite(LED_BUILTIN, LOW);
       delay(200);
       digitalWrite(LED_BUILTIN, HIGH);
