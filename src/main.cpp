@@ -14,12 +14,12 @@ const uint_fast16_t buttonDelay = 300;
 
 uint_fast8_t messageID = 0;
 
-const byte colorReadMessage = 0;
-const byte colorClearMessage = 1;
-const byte brightnessUpMessage = 2;
-const byte brightnessDownMessage = 3;
-const byte densityUpMessage = 4;
-const byte densityDownMessage = 5;
+const byte colorReadMessage = 1;
+const byte colorClearMessage = 2;
+const byte brightnessUpMessage = 3;
+const byte brightnessDownMessage = 4;
+const byte densityUpMessage = 5;
+const byte densityDownMessage = 6;
 
 const float touchThreshold = 1.25;
 
