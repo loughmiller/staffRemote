@@ -46,8 +46,24 @@ bool colorSensorOn = true;
 
 void setup()
 {
+  // COLOR SENSOR SETUP
+  if (tcs.begin()) {
+    Serial.println("Found color sensor");
+    tcs.setInterrupt(true);
+  } else {
+    Serial.println("No color sensor found!");
+    while (millis() < 10000) {
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(200);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(200);
+    }
+  }
+
+  uint_fast16_t colorSensorSetupTime = millis();
+
   // SETUP SERIAL CONNECTION FOR LOGGING
-  while(!Serial && millis() < 10000);
+  while(!Serial && millis() < (colorSensorSetupTime + 10000));
   Serial.println("setup");
 
   // Use pulldown where buttons connect to vcc on press with resistors
@@ -61,19 +77,6 @@ void setup()
   vw_setup(2000);	 // Bits per sec
   Serial.println("transmitter ready");
 
-  // COLOR SENSOR SETUP
-  if (tcs.begin()) {
-    Serial.println("Found color sensor");
-    tcs.setInterrupt(true);
-  } else {
-    Serial.println("No color sensor found!");
-    while (millis() < 20000) {
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(200);
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(200);
-    }
-  }
 }
 
 bool readComplete = false;
