@@ -4,6 +4,9 @@
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TCS34725.h>
+#include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
+#include <Adafruit_GFX.h>   // Needs a little change in original Adafruit library (See README.txt file)
+
 
 // RADIO TRANSMITTER
 const byte authByteStart = 117;
@@ -23,15 +26,6 @@ const byte densityDownMessage = 6;
 
 const float touchThreshold = 1.25;
 
-void debounce();
-void stealColor();
-void clearColor();
-void brightnessUp();
-void brightnessDown();
-void densityUp();
-void densityDown();
-void sendMessage(byte messageType, byte data);
-
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 uint8_t readHue();
@@ -44,20 +38,47 @@ const int buttons_vcc_pin = 15;
 
 bool colorSensorOn = true;
 
+// DISPLAY
+#define OLED_RESET  16  // Pin 15 -RESET digital signal
+ArducamSSD1306 display(OLED_RESET); // FOR I2C
+
+const uint_fast8_t font2Width = 9;
+const uint_fast8_t font2Pad = 2;
+const uint_fast8_t font3Width = 14;
+const uint_fast8_t font3Pad = 3;
+
+const uint_fast8_t line1Y = 18;
+const uint_fast8_t line2Y = 43;
+const uint_fast8_t singleLineY = 35;
+
+// function defs
+void debounce();
+void stealColor();
+void clearColor();
+void brightnessUp();
+void brightnessDown();
+void densityUp();
+void densityDown();
+void sendMessage(byte messageType, byte data);
+void displayLineFont3(const uint_fast8_t y, const char *line);
+void displayLineFont2(const uint_fast8_t y, const char *line);
+void displayState(const char *line1, const char *line2);
+
 void setup()
 {
+  // DISPLAT - SSD1306 Init
+  display.begin();  // Switch OLED
+  display.setTextColor(WHITE);
+  display.clearDisplay();
+  display.display();
+
   // COLOR SENSOR SETUP
   if (tcs.begin()) {
     Serial.println("Found color sensor");
     tcs.setInterrupt(true);
   } else {
-    Serial.println("No color sensor found!");
-    while (millis() < 10000) {
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(200);
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(200);
-    }
+    displayState("Color", "Sensor");
+    delay(5);
   }
 
   uint_fast16_t colorSensorSetupTime = millis();
@@ -76,7 +97,6 @@ void setup()
   vw_set_tx_pin(transmit_pin);
   vw_setup(2000);	 // Bits per sec
   Serial.println("transmitter ready");
-
 }
 
 bool readComplete = false;
@@ -238,4 +258,45 @@ uint8_t calcHue(float r, float g, float b) {
   }
 
   return (uint8_t)((hue/360) * 255);
+}
+
+
+void displayLineFont3(const uint_fast8_t y, const char *line) {
+  const uint_fast8_t pixelWidth = strlen(line) * (font3Width + font3Pad);
+  const uint_fast8_t offset = ((128 - pixelWidth)/2) - 2;
+  display.setTextSize(3);
+  display.setCursor(offset, y);
+  // display.print(strlen(line));
+  // display.print(" ");
+  // display.print(pixelWidth);
+  // display.print(" ");
+  // display.print(offset);
+  display.print(line);
+}
+
+void displayLineFont2(const uint_fast8_t y, const char *line) {
+  const uint_fast8_t pixelWidth = strlen(line) * (font2Width + font3Pad);
+  const uint_fast8_t offset = ((128 - pixelWidth)/2) - 2;
+  display.setTextSize(2);
+  display.setCursor(offset, y);
+  // display.print(strlen(line));
+  // display.print(" ");
+  // display.print(pixelWidth);
+  // display.print(" ");
+  // display.print(offset);
+  display.print(line);
+}
+
+void displayState(const char *line1, const char *line2) {
+  display.clearDisplay();
+  if (strlen(line1) > 7) {
+    displayLineFont2(singleLineY, line1);
+  } else if (strlen(line2) < 1) {
+    displayLineFont3(singleLineY, line1);
+  } else {
+    displayLineFont3(line1Y, line1);
+    displayLineFont3(line2Y, line2);
+  }
+
+  display.display();
 }
