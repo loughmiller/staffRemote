@@ -1,0 +1,3 @@
+[submodule "lib/ArducamSSD1306"]
+	path = lib/ArducamSSD1306
+	url = git@github.com:supprot/ArducamSSD1306.git
