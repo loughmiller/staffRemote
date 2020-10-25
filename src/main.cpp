@@ -52,7 +52,9 @@ const uint_fast8_t line2Y = 43;
 const uint_fast8_t singleLineY = 35;
 
 // function defs
-void debounce();
+void menu();
+void up();
+void down();
 void stealColor();
 void clearColor();
 void brightnessUp();
@@ -63,10 +65,11 @@ void sendMessage(byte messageType, byte data);
 void displayLineFont3(const uint_fast8_t y, const char *line);
 void displayLineFont2(const uint_fast8_t y, const char *line);
 void displayState(const char *line1, const char *line2);
+void drawGauge(float value);
 
 void setup()
 {
-  // DISPLAT - SSD1306 Init
+  // DISPLAY - SSD1306 Init
   display.begin();  // Switch OLED
   display.setTextColor(WHITE);
   display.clearDisplay();
@@ -107,6 +110,8 @@ uint_fast16_t lastButtons = 0;
 uint_fast16_t touch1 = 0;
 uint_fast16_t touchAvg = 10000;
 
+float gauge = 0.5;
+
 void loop() {
   buttons = analogRead(BUTTONS_INPUT);
 
@@ -117,34 +122,17 @@ void loop() {
   }
 
   if (buttons > 950) {
-    colorSensorOn = !colorSensorOn;
-    if (colorSensorOn) {
-      digitalWrite(LED_BUILTIN, HIGH);
-      clearColor();
-    } else {
-      digitalWrite(LED_BUILTIN, LOW);
-    }
-    delay(1000);
-    return;
-  }
-
-  if (buttons > 775) {
-    brightnessDown();
+    menu();
     return;
   }
 
   if (buttons > 650) {
-    brightnessUp();
+    down();
     return;
   }
 
   if (buttons > 450) {
-    densityUp();
-    return;
-  }
-
-  if (buttons > 350) {
-    densityDown();
+    up();
     return;
   }
 
@@ -168,6 +156,27 @@ void loop() {
 
   buttonStabalizing = false;
   delay(buttonDelay);
+}
+
+void menu() {
+  displayState("MENU", "");
+  display.display();
+}
+
+void up() {
+  displayState("UP", "");
+  gauge = min(1, gauge + 0.02);
+  drawGauge(gauge);
+  display.display();
+  brightnessUp();
+}
+
+void down() {
+  displayState("DOWN", "");
+  gauge = max(0, gauge - 0.02);
+  drawGauge(gauge);
+  display.display();
+  brightnessDown();
 }
 
 void stealColor() {
@@ -212,7 +221,7 @@ void sendMessage(byte messageType, byte data) {
   Serial.print(data);
   Serial.println("");
 
-  for(uint_fast8_t i=0; i<5;i++) {
+  for(uint_fast8_t i=0; i<3;i++) {
     vw_send((uint8_t *)msg, sizeof(msg));
     vw_wait_tx(); // Wait until the whole message is gone
     delay(25);
@@ -297,6 +306,10 @@ void displayState(const char *line1, const char *line2) {
     displayLineFont3(line1Y, line1);
     displayLineFont3(line2Y, line2);
   }
+}
 
-  display.display();
+void drawGauge(float value) {
+  uint_fast8_t width = (int)128.0*value;
+  display.drawRect(0, 0, 128, 16, 1);
+  display.fillRect(0, 0, width, 16, 1);
 }
