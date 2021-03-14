@@ -44,7 +44,8 @@ class MenuItem {
     void setValue(uint_fast8_t value);
     uint_fast8_t getValue();
     void setIncrement(uint_fast8_t increment);
-    void updateDisplay();
+    void displayNameAndGauge();
+    void displayName();
 };
 
 #endif /* MENU_ITEM_H */

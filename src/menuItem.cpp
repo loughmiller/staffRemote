@@ -16,17 +16,17 @@ MenuItem::MenuItem(ArducamSSD1306& display,
 
 void MenuItem::incrementValue() {
   this->value += this->increment;
-  this->updateDisplay();
+  this->displayNameAndGauge();
 }
 
 void MenuItem::decrementValue() {
   this->value -= this->increment;
-  this->updateDisplay();
+  this->displayNameAndGauge();
 }
 
 void MenuItem::setValue(uint_fast8_t value) {
   this->value = value;
-  this->updateDisplay();
+  this->displayNameAndGauge();
 }
 
 uint_fast8_t MenuItem::getValue() {
@@ -37,7 +37,12 @@ void MenuItem::setIncrement(uint_fast8_t increment) {
   this->increment = increment;
 }
 
-void MenuItem::updateDisplay() {
+void MenuItem::displayName() {
+  this->displayMenuLabel(this->line1, this->line2);
+  this->display->display();
+}
+
+void MenuItem::displayNameAndGauge() {
   this->displayMenuLabel(this->line1, this->line2);
   this->drawGauge();
   this->display->display();

@@ -11,25 +11,26 @@
 // RADIO TRANSMITTER
 const byte authByteStart = 117;
 const byte authByteEnd = 115;
-
 const uint_fast8_t transmit_pin = 12;
-const uint_fast16_t buttonDelay = 300;
-
 uint8_t messageID = 0;
 
 const byte brightness = 2;
-
-const float touchThreshold = 1.25;
+const byte density = 3;
 
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
-// BUTTON PINS
+// BUTTONS
 const int buttons_vcc_pin = 15;
 #define BUTTONS_INPUT A0
 #define TOUCH_1 17
+
+const uint_fast16_t fastButtonDelay = 20;
+const uint_fast16_t slowButtonDelay = 500;
+uint_fast16_t buttonDelay = fastButtonDelay;
+const float touchThreshold = 1.25;
 
 bool colorSensorOn = true;
 
@@ -37,24 +38,23 @@ bool colorSensorOn = true;
 #define OLED_RESET  16  // Pin 15 -RESET digital signal
 ArducamSSD1306 display(OLED_RESET); // FOR I2C
 
-const uint_fast8_t font2Width = 9;
-const uint_fast8_t font2Pad = 2;
-const uint_fast8_t font3Width = 14;
-const uint_fast8_t font3Pad = 3;
 
-const uint_fast8_t line1Y = 18;
-const uint_fast8_t line2Y = 43;
-const uint_fast8_t singleLineY = 35;
-
-MenuItem * menuItems[1];
-
+// MENU STATE
+const uint_fast8_t menuItemsCount = 2;
+MenuItem * menuItems[menuItemsCount];
 uint_fast8_t currentMenuItem = 0;
+bool menuActive = false;
 
 // function defs
 void simpleDisplay(const char *message);
 void stealColor();
 void clearColor();
 void menu();
+void up();
+void down();
+void menuNext();
+void menuPrevious();
+
 void sendMessage(byte messageType, byte data);
 
 ///////////////////////////////////////////////////////////////////
@@ -107,7 +107,17 @@ void setup()
     224,
     4);
 
-    menuItems[currentMenuItem]->updateDisplay();
+  menuItems[1] = new MenuItem(display,
+    density,
+    "Density",
+    "",
+    24,
+    2);
+
+    menuItems[currentMenuItem]->displayName();
+
+
+  simpleDisplay("booting   complete");
 }
 ///////////////////////////////////////////////////////////////////
 // \ SETUP END /
@@ -129,14 +139,10 @@ float gauge = 0.5;
 ///////////////////////////////////////////////////////////////////
 void loop() {
 
+  delay(buttonDelay);
+
   buttons = analogRead(BUTTONS_INPUT);
   // Serial.println(buttons);
-
-  if (!buttonStabalizing) {
-    buttonStabalizing = true;
-    delay(50);
-    return;
-  }
 
   if (buttons > 950) {
     menu();
@@ -144,12 +150,12 @@ void loop() {
   }
 
   if (buttons > 600) {
-    menuItems[currentMenuItem]->decrementValue();
+    down();
     return;
   }
 
   if (buttons > 400) {
-    menuItems[currentMenuItem]->incrementValue();
+    up();
     return;
   }
 
@@ -171,8 +177,7 @@ void loop() {
     readComplete = false;
   }
 
-  buttonStabalizing = false;
-  delay(buttonDelay);
+  buttonDelay = fastButtonDelay;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -181,8 +186,43 @@ void loop() {
 
 
 void menu() {
-  // displayState("MENU", "");
-  // display.display();
+  buttonDelay = slowButtonDelay;
+  menuActive = !menuActive;
+  if (menuActive) {
+    menuItems[currentMenuItem]->displayNameAndGauge();
+  } else {
+    menuItems[currentMenuItem]->displayName();
+  }
+}
+
+void up() {
+  if (menuActive) {
+    menuItems[currentMenuItem]->incrementValue();
+    buttonDelay = fastButtonDelay;
+  } else {
+    menuNext();
+    menuItems[currentMenuItem]->displayName();
+    buttonDelay = slowButtonDelay;
+  }
+}
+
+void down() {
+  if (menuActive) {
+    menuItems[currentMenuItem]->decrementValue();
+    buttonDelay = fastButtonDelay;
+  } else {
+    menuPrevious();
+    menuItems[currentMenuItem]->displayName();
+    buttonDelay = slowButtonDelay;
+  }
+}
+
+void menuNext() {
+  currentMenuItem = (currentMenuItem + 1) % menuItemsCount;
+}
+
+void menuPrevious() {
+  currentMenuItem = (currentMenuItem - 1) % menuItemsCount;
 }
 
 void stealColor() {
