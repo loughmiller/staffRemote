@@ -1,12 +1,12 @@
 #include <Arduino.h>
-#include <VirtualWire.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <VirtualWire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TCS34725.h>
 #include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
 #include <Adafruit_GFX.h>   // Needs a little change in original Adafruit library (See README.txt file)
-
+#include "menuItem.h"
 
 // RADIO TRANSMITTER
 const byte authByteStart = 117;
@@ -15,14 +15,9 @@ const byte authByteEnd = 115;
 const uint_fast8_t transmit_pin = 12;
 const uint_fast16_t buttonDelay = 300;
 
-uint_fast8_t messageID = 0;
+uint8_t messageID = 0;
 
-const byte colorReadMessage = 1;
-const byte colorClearMessage = 2;
-const byte brightnessUpMessage = 3;
-const byte brightnessDownMessage = 4;
-const byte densityUpMessage = 5;
-const byte densityDownMessage = 6;
+const byte brightness = 2;
 
 const float touchThreshold = 1.25;
 
@@ -51,36 +46,34 @@ const uint_fast8_t line1Y = 18;
 const uint_fast8_t line2Y = 43;
 const uint_fast8_t singleLineY = 35;
 
+MenuItem * menuItems[1];
+
+uint_fast8_t currentMenuItem = 0;
+
 // function defs
-void menu();
-void up();
-void down();
+void simpleDisplay(const char *message);
 void stealColor();
 void clearColor();
-void brightnessUp();
-void brightnessDown();
-void densityUp();
-void densityDown();
+void menu();
 void sendMessage(byte messageType, byte data);
-void displayLineFont3(const uint_fast8_t y, const char *line);
-void displayLineFont2(const uint_fast8_t y, const char *line);
-void displayState(const char *line1, const char *line2);
-void drawGauge(float value);
 
+///////////////////////////////////////////////////////////////////
+// SETUP
+///////////////////////////////////////////////////////////////////
 void setup()
 {
   // DISPLAY - SSD1306 Init
   display.begin();  // Switch OLED
   display.setTextColor(WHITE);
-  display.clearDisplay();
-  display.display();
+
+  simpleDisplay("booting");
 
   // COLOR SENSOR SETUP
   if (tcs.begin()) {
     Serial.println("Found color sensor");
     tcs.setInterrupt(true);
   } else {
-    displayState("Color", "Sensor");
+    simpleDisplay("no color  sensor");
     delay(5);
   }
 
@@ -100,7 +93,26 @@ void setup()
   vw_set_tx_pin(transmit_pin);
   vw_setup(2000);	 // Bits per sec
   Serial.println("transmitter ready");
+
+  simpleDisplay("booting   complete");
+
+
+  // MENU ITEMS
+
+  // brightness
+  menuItems[0] = new MenuItem(display,
+    brightness,
+    "Brightness",
+    "",
+    224,
+    4);
+
+    menuItems[currentMenuItem]->updateDisplay();
 }
+///////////////////////////////////////////////////////////////////
+// \ SETUP END /
+///////////////////////////////////////////////////////////////////
+
 
 bool readComplete = false;
 bool buttonStabalizing = false;
@@ -112,8 +124,13 @@ uint_fast16_t touchAvg = 10000;
 
 float gauge = 0.5;
 
+///////////////////////////////////////////////////////////////////
+// LOOP
+///////////////////////////////////////////////////////////////////
 void loop() {
+
   buttons = analogRead(BUTTONS_INPUT);
+  // Serial.println(buttons);
 
   if (!buttonStabalizing) {
     buttonStabalizing = true;
@@ -126,13 +143,13 @@ void loop() {
     return;
   }
 
-  if (buttons > 650) {
-    down();
+  if (buttons > 600) {
+    menuItems[currentMenuItem]->decrementValue();
     return;
   }
 
-  if (buttons > 450) {
-    up();
+  if (buttons > 400) {
+    menuItems[currentMenuItem]->incrementValue();
     return;
   }
 
@@ -158,77 +175,39 @@ void loop() {
   delay(buttonDelay);
 }
 
+///////////////////////////////////////////////////////////////////
+// \ LOOP END /
+///////////////////////////////////////////////////////////////////
+
+
 void menu() {
-  displayState("MENU", "");
-  display.display();
-}
-
-void up() {
-  displayState("UP", "");
-  gauge = min(1, gauge + 0.02);
-  drawGauge(gauge);
-  display.display();
-  brightnessUp();
-}
-
-void down() {
-  displayState("DOWN", "");
-  gauge = max(0, gauge - 0.02);
-  drawGauge(gauge);
-  display.display();
-  brightnessDown();
+  // displayState("MENU", "");
+  // display.display();
 }
 
 void stealColor() {
   byte hue = readHue();
 
   // Serial.println("stealColor");
-  sendMessage(colorReadMessage, hue);
+  // sendMessage(colorReadMessage, hue);
 }
 
 void clearColor() {
   // Serial.println("clearColor");
-  sendMessage(colorClearMessage, 0);
+  // sendMessage(colorClearMessage, 0);
 }
 
-void brightnessUp() {
-  // Serial.println("brightnessUp");
-  sendMessage(brightnessUpMessage, 0);
+void simpleDisplay(const char *message) {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(1, 16);
+  display.print(message);
+  display.display();
 }
 
-void brightnessDown() {
-  // Serial.println("brightnessDown");
-  sendMessage(brightnessDownMessage, 0);
-}
-
-void densityUp() {
-  // Serial.println("densityUp");
-  sendMessage(densityUpMessage, 0);
-}
-
-void densityDown() {
-  // Serial.println("densityDown");
-  sendMessage(densityDownMessage, 0);
-}
-
-void sendMessage(byte messageType, byte data) {
-  byte msg[5] = {authByteStart, messageID, messageType, data, authByteEnd};
-
-  Serial.print(messageID);
-  Serial.print("\t");
-  Serial.print(messageType);
-  Serial.print("\t");
-  Serial.print(data);
-  Serial.println("");
-
-  for(uint_fast8_t i=0; i<3;i++) {
-    vw_send((uint8_t *)msg, sizeof(msg));
-    vw_wait_tx(); // Wait until the whole message is gone
-    delay(25);
-  }
-
-  messageID++;
-}
+///////////////////////////////////////////////////////////////////
+// COLOR SENSOR FUNCTIONS
+///////////////////////////////////////////////////////////////////
 
 uint8_t readHue() {
   uint16_t clear, red, green, blue;
@@ -269,47 +248,6 @@ uint8_t calcHue(float r, float g, float b) {
   return (uint8_t)((hue/360) * 255);
 }
 
-
-void displayLineFont3(const uint_fast8_t y, const char *line) {
-  const uint_fast8_t pixelWidth = strlen(line) * (font3Width + font3Pad);
-  const uint_fast8_t offset = ((128 - pixelWidth)/2) - 2;
-  display.setTextSize(3);
-  display.setCursor(offset, y);
-  // display.print(strlen(line));
-  // display.print(" ");
-  // display.print(pixelWidth);
-  // display.print(" ");
-  // display.print(offset);
-  display.print(line);
-}
-
-void displayLineFont2(const uint_fast8_t y, const char *line) {
-  const uint_fast8_t pixelWidth = strlen(line) * (font2Width + font3Pad);
-  const uint_fast8_t offset = ((128 - pixelWidth)/2) - 2;
-  display.setTextSize(2);
-  display.setCursor(offset, y);
-  // display.print(strlen(line));
-  // display.print(" ");
-  // display.print(pixelWidth);
-  // display.print(" ");
-  // display.print(offset);
-  display.print(line);
-}
-
-void displayState(const char *line1, const char *line2) {
-  display.clearDisplay();
-  if (strlen(line1) > 7) {
-    displayLineFont2(singleLineY, line1);
-  } else if (strlen(line2) < 1) {
-    displayLineFont3(singleLineY, line1);
-  } else {
-    displayLineFont3(line1Y, line1);
-    displayLineFont3(line2Y, line2);
-  }
-}
-
-void drawGauge(float value) {
-  uint_fast8_t width = (int)128.0*value;
-  display.drawRect(0, 0, 128, 16, 1);
-  display.fillRect(0, 0, width, 16, 1);
-}
+///////////////////////////////////////////////////////////////////
+// \ COLOR SENSOR FUNCTIONS END /
+///////////////////////////////////////////////////////////////////
