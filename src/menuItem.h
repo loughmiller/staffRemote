@@ -1,16 +1,14 @@
 #include <Arduino.h>
-#include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
-#include <VirtualWire.h>
+#include <ArducamSSD1306.h>
+#include "transmitter.h"
 
 #ifndef MENU_ITEM_H
 #define MENU_ITEM_H
 
-// display config values
-
-
 class MenuItem {
   protected :
     ArducamSSD1306 *display;
+    Transmitter *transmitter;
     const char *line1;
     const char *line2;
     byte messageType;
@@ -34,6 +32,7 @@ class MenuItem {
 
   public :
     MenuItem(ArducamSSD1306& display,
+      Transmitter& transmitter,
       byte messageType,
       const char *line1,
       const char *line2,

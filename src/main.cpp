@@ -7,15 +7,18 @@
 #include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
 #include <Adafruit_GFX.h>   // Needs a little change in original Adafruit library (See README.txt file)
 #include "menuItem.h"
+#include "transmitter.h"
 
 // RADIO TRANSMITTER
 const byte authByteStart = 117;
 const byte authByteEnd = 115;
 const uint_fast8_t transmit_pin = 12;
-uint8_t messageID = 0;
+Transmitter transmitter(transmit_pin, authByteStart, authByteEnd);
 
+// message types
 const byte brightness = 2;
 const byte density = 3;
+
 
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
@@ -55,8 +58,6 @@ void down();
 void menuNext();
 void menuPrevious();
 
-void sendMessage(byte messageType, byte data);
-
 ///////////////////////////////////////////////////////////////////
 // SETUP
 ///////////////////////////////////////////////////////////////////
@@ -89,35 +90,32 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
 
   // TRANSMITTER SETUP
-  Serial.println("setup transmitter");
-  vw_set_tx_pin(transmit_pin);
-  vw_setup(2000);	 // Bits per sec
-  Serial.println("transmitter ready");
-
-  simpleDisplay("booting   complete");
-
+  // const byte authByteStart = 117;
+  // const byte authByteEnd = 115;
+  // const uint_fast8_t transmit_pin = 12;
+  // transmitter = new Transmitter(transmit_pin, authByteStart, authByteEnd);
 
   // MENU ITEMS
 
-  // brightness
   menuItems[0] = new MenuItem(display,
+    transmitter,
     brightness,
     "Brightness",
     "",
-    224,
-    4);
+    223,
+    8);
 
   menuItems[1] = new MenuItem(display,
+    transmitter,
     density,
     "Density",
     "",
-    24,
-    2);
-
-    menuItems[currentMenuItem]->displayName();
-
+    23,
+    4);
 
   simpleDisplay("booting   complete");
+
+  menuItems[currentMenuItem]->displayName();
 }
 ///////////////////////////////////////////////////////////////////
 // \ SETUP END /
