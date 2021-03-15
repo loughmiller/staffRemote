@@ -5,7 +5,7 @@ MenuItem::MenuItem(ArducamSSD1306& display,
       byte messageType,
       const char *line1,
       const char *line2,
-      const uint_fast8_t value,
+      const uint8_t value,
       const uint_fast8_t increment) {
   this->display = &display;
   this->transmitter = &transmitter;

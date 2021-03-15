@@ -18,6 +18,7 @@ Transmitter transmitter(transmit_pin, authByteStart, authByteEnd);
 // message types
 const byte brightness = 2;
 const byte density = 3;
+const byte sparkles = 4;
 
 
 // COLOR SENSOR
@@ -43,7 +44,7 @@ ArducamSSD1306 display(OLED_RESET); // FOR I2C
 
 
 // MENU STATE
-const uint_fast8_t menuItemsCount = 2;
+const uint_fast8_t menuItemsCount = 3;
 MenuItem * menuItems[menuItemsCount];
 uint_fast8_t currentMenuItem = 0;
 bool menuActive = false;
@@ -111,6 +112,14 @@ void setup()
     "Density",
     "",
     23,
+    4);
+
+  menuItems[2] = new MenuItem(display,
+    transmitter,
+    sparkles,
+    "Sparkles",
+    "",
+    65,
     4);
 
   simpleDisplay("booting   complete");
