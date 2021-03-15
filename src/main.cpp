@@ -47,7 +47,6 @@ ArducamSSD1306 display(OLED_RESET); // FOR I2C
 const uint_fast8_t menuItemsCount = 3;
 MenuItem * menuItems[menuItemsCount];
 uint_fast8_t currentMenuItem = 0;
-bool menuActive = false;
 
 // function defs
 void simpleDisplay(const char *message);
@@ -124,7 +123,7 @@ void setup()
 
   simpleDisplay("booting   complete");
 
-  menuItems[currentMenuItem]->displayName();
+  menuItems[currentMenuItem]->displayNameAndGauge();
 }
 ///////////////////////////////////////////////////////////////////
 // \ SETUP END /
@@ -194,38 +193,22 @@ void loop() {
 
 void menu() {
   buttonDelay = slowButtonDelay;
-  menuActive = !menuActive;
-  if (menuActive) {
-    menuItems[currentMenuItem]->displayNameAndGauge();
-  } else {
-    menuItems[currentMenuItem]->displayName();
-  }
+  menuNext();
 }
 
 void up() {
-  if (menuActive) {
-    menuItems[currentMenuItem]->incrementValue();
-    buttonDelay = fastButtonDelay;
-  } else {
-    menuNext();
-    menuItems[currentMenuItem]->displayName();
-    buttonDelay = slowButtonDelay;
-  }
+  menuItems[currentMenuItem]->incrementValue();
+  buttonDelay = fastButtonDelay;
 }
 
 void down() {
-  if (menuActive) {
-    menuItems[currentMenuItem]->decrementValue();
-    buttonDelay = fastButtonDelay;
-  } else {
-    menuPrevious();
-    menuItems[currentMenuItem]->displayName();
-    buttonDelay = slowButtonDelay;
-  }
+  menuItems[currentMenuItem]->decrementValue();
+  buttonDelay = fastButtonDelay;
 }
 
 void menuNext() {
   currentMenuItem = (currentMenuItem + 1) % menuItemsCount;
+  menuItems[currentMenuItem]->displayNameAndGauge();
 }
 
 void menuPrevious() {
