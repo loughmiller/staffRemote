@@ -7,7 +7,7 @@
 #include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
 #include <Adafruit_GFX.h>   // Needs a little change in original Adafruit library (See README.txt file)
 #include "menuItem.h"
-#include "menuItemStealColor.h"
+#include "menuItemOnOff.h"
 #include "transmitter.h"
 
 // RADIO TRANSMITTER
@@ -122,7 +122,7 @@ void setup()
     65,
     4);
 
-  menuItems[3] = new MenuItemStealColor(display,
+  menuItems[3] = new MenuItemOnOff(display,
     transmitter,
     type_hue,
     "Steal",

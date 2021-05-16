@@ -3,10 +3,10 @@
 #ifndef MENU_ITEM_STEAL_COLOR_H
 #define MENU_ITEM_STEAL_COLOR_H
 
-class MenuItemStealColor : public MenuItem {
+class MenuItemOnOff : public MenuItem {
 
   public :
-    MenuItemStealColor(ArducamSSD1306& display,
+    MenuItemOnOff(ArducamSSD1306& display,
       Transmitter& transmitter,
       byte messageType,
       const char *line1,

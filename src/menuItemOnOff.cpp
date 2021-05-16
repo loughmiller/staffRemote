@@ -1,6 +1,6 @@
-#include "menuItemStealColor.h"
+#include "menuItemOnOff.h"
 
-MenuItemStealColor::MenuItemStealColor(ArducamSSD1306& display,
+MenuItemOnOff::MenuItemOnOff(ArducamSSD1306& display,
   Transmitter& transmitter,
   byte messageType,
   const char *line1,
@@ -10,10 +10,10 @@ MenuItemStealColor::MenuItemStealColor(ArducamSSD1306& display,
 : MenuItem(display, transmitter, messageType, line1, line2, value, increment) {
 }
 
-void MenuItemStealColor::incrementValue() {
+void MenuItemOnOff::incrementValue() {
   this->setValue(255);
 }
 
-void MenuItemStealColor::decrementValue() {
+void MenuItemOnOff::decrementValue() {
   this->setValue(0);
 }
