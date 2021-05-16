@@ -38,10 +38,6 @@ void MenuItem::setIncrement(uint_fast8_t increment) {
   this->increment = increment;
 }
 
-void MenuItem::displayName() {
-  this->displayMenuLabel(this->line1, this->line2);
-  this->display->display();
-}
 
 void MenuItem::displayNameAndGauge() {
   this->displayMenuLabel(this->line1, this->line2);
@@ -77,14 +73,16 @@ void MenuItem::displayLineFont2(const uint_fast8_t y, const char *line) {
 
 void MenuItem::displayMenuLabel(const char *line1, const char *line2) {
   this->display->clearDisplay();
-  if (strlen(line1) > 7) {
-    this->displayLineFont2(this->singleLineY, line1);
-  } else if (strlen(line2) < 1) {
-    this->displayLineFont3(this->singleLineY, line1);
-  } else {
-    this->displayLineFont3(this->line1Y, line1);
-    this->displayLineFont3(this->line2Y, line2);
-  }
+  this->displayLineFont2(this->line1Y, line1);
+  this->displayLineFont2(this->line2Y, line2);
+  // if (strlen(line1) > 7) {
+  //   this->displayLineFont2(this->singleLineY, line1);
+  // } else if (strlen(line2) < 1) {
+  //   this->displayLineFont3(this->singleLineY, line1);
+  // } else {
+  //   this->displayLineFont3(this->line1Y, line1);
+  //   this->displayLineFont3(this->line2Y, line2);
+  // }
 }
 
 void MenuItem::drawGauge() {

@@ -22,7 +22,6 @@ class MenuItem {
 
     const uint_fast8_t line1Y = 18;
     const uint_fast8_t line2Y = 43;
-    const uint_fast8_t singleLineY = 35;
 
     void displayLineFont2(const uint_fast8_t y, const char *line);
     void displayLineFont3(const uint_fast8_t y, const char *line);
@@ -38,13 +37,12 @@ class MenuItem {
       const char *line2,
       const uint8_t value,
       const uint_fast8_t increment);
-    void incrementValue();
-    void decrementValue();
+    void virtual incrementValue();
+    void virtual decrementValue();
     void setValue(uint_fast8_t value);
     uint_fast8_t getValue();
     void setIncrement(uint_fast8_t increment);
     void displayNameAndGauge();
-    void displayName();
 };
 
 #endif /* MENU_ITEM_H */

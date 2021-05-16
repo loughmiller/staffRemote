@@ -7,6 +7,7 @@
 #include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
 #include <Adafruit_GFX.h>   // Needs a little change in original Adafruit library (See README.txt file)
 #include "menuItem.h"
+#include "menuItemStealColor.h"
 #include "transmitter.h"
 
 // RADIO TRANSMITTER
@@ -14,12 +15,6 @@ const byte authByteStart = 117;
 const byte authByteEnd = 115;
 const uint_fast8_t transmit_pin = 12;
 Transmitter transmitter(transmit_pin, authByteStart, authByteEnd);
-
-// message types
-const byte brightness = 2;
-const byte density = 3;
-const byte sparkles = 4;
-
 
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
@@ -43,8 +38,14 @@ bool colorSensorOn = true;
 ArducamSSD1306 display(OLED_RESET); // FOR I2C
 
 
+// message types
+const byte type_brightness = 2;
+const byte type_density = 3;
+const byte type_sparkles = 4;
+const byte type_hue = 5;
+
 // MENU STATE
-const uint_fast8_t menuItemsCount = 3;
+const uint_fast8_t menuItemsCount = 5;
 MenuItem * menuItems[menuItemsCount];
 uint_fast8_t currentMenuItem = 0;
 
@@ -99,7 +100,7 @@ void setup()
 
   menuItems[0] = new MenuItem(display,
     transmitter,
-    brightness,
+    type_brightness,
     "Brightness",
     "",
     223,
@@ -107,7 +108,7 @@ void setup()
 
   menuItems[1] = new MenuItem(display,
     transmitter,
-    density,
+    type_density,
     "Density",
     "",
     23,
@@ -115,11 +116,35 @@ void setup()
 
   menuItems[2] = new MenuItem(display,
     transmitter,
-    sparkles,
+    type_sparkles,
     "Sparkles",
     "",
     65,
     4);
+
+  menuItems[3] = new MenuItemStealColor(display,
+    transmitter,
+    type_hue,
+    "Steal",
+    "Color",
+    0,
+    1);
+
+  menuItems[4] = new MenuItem(display,
+    transmitter,
+    type_hue,
+    "Hue",
+    "",
+    0,
+    2);
+
+  // menuItems[4] = new MenuItem(display,
+  //   transmitter,
+  //   type_hue,
+  //   "Hue",
+  //   "fine",
+  //   0,
+  //   1);
 
   simpleDisplay("booting   complete");
 
