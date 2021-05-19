@@ -43,9 +43,12 @@ const byte type_brightness = 2;
 const byte type_density = 3;
 const byte type_sparkles = 4;
 const byte type_hue = 5;
+const byte type_cycle = 6;
+const byte type_streaks = 7;
+const byte type_solid = 8;
 
 // MENU STATE
-const uint_fast8_t menuItemsCount = 5;
+const uint_fast8_t menuItemsCount = 8;
 MenuItem * menuItems[menuItemsCount];
 uint_fast8_t currentMenuItem = 0;
 
@@ -98,31 +101,7 @@ void setup()
 
   // MENU ITEMS
 
-  menuItems[0] = new MenuItem(display,
-    transmitter,
-    type_brightness,
-    "Brightness",
-    "",
-    223,
-    8);
-
-  menuItems[1] = new MenuItem(display,
-    transmitter,
-    type_density,
-    "Density",
-    "",
-    23,
-    4);
-
-  menuItems[2] = new MenuItem(display,
-    transmitter,
-    type_sparkles,
-    "Sparkles",
-    "",
-    65,
-    4);
-
-  menuItems[3] = new MenuItemOnOff(display,
+  menuItems[0] = new MenuItemOnOff(display,
     transmitter,
     type_hue,
     "Steal",
@@ -130,21 +109,62 @@ void setup()
     0,
     1);
 
+  // probably can just set this off in the loop after a few seconds
+  menuItems[1] = new MenuItemOnOff(display,
+    transmitter,
+    type_cycle,
+    "Cycle",
+    "Colors",
+    0,
+    1);
+
+  menuItems[2] = new MenuItem(display,
+    transmitter,
+    type_brightness,
+    "Brightness",
+    "",
+    223,
+    8);
+
+  menuItems[3] = new MenuItem(display,
+    transmitter,
+    type_streaks,
+    "Streaks",
+    "",
+    0,
+    1);
+
   menuItems[4] = new MenuItem(display,
+    transmitter,
+    type_density,
+    "Music",
+    "",
+    23,
+    4);
+
+  menuItems[5] = new MenuItem(display,
+    transmitter,
+    type_sparkles,
+    "Sparkles",
+    "",
+    65,
+    4);
+
+  menuItems[6] = new MenuItemOnOff(display,
+    transmitter,
+    type_solid,
+    "Solid",
+    "",
+    0,
+    1);
+
+  menuItems[7] = new MenuItem(display,
     transmitter,
     type_hue,
     "Hue",
     "",
     0,
     2);
-
-  // menuItems[4] = new MenuItem(display,
-  //   transmitter,
-  //   type_hue,
-  //   "Hue",
-  //   "fine",
-  //   0,
-  //   1);
 
   simpleDisplay("booting   complete");
 
