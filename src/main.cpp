@@ -33,6 +33,17 @@ const float touchThreshold = 1.25;
 
 bool colorSensorOn = true;
 
+// ROTARY ENCODER
+const uint_fast8_t encoderLeftPin = 5;
+const uint_fast8_t encoderRightPin = 8;
+
+uint_fast8_t lastLeft = 0;
+uint_fast8_t lastRight = 0;
+
+int_fast16_t lastC = 0;
+int_fast16_t c = 0;
+
+
 // DISPLAY
 #define OLED_RESET  16  // Pin 15 -RESET digital signal
 ArducamSSD1306 display(OLED_RESET); // FOR I2C
@@ -95,6 +106,10 @@ void setup()
   // to distingish different buttons on one input line
   pinMode(BUTTONS_INPUT, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
+
+  pinMode(encoderLeftPin, INPUT);
+  pinMode(encoderRightPin, INPUT);
+
 
   // TRANSMITTER SETUP
   // const byte authByteStart = 117;
@@ -193,7 +208,26 @@ float gauge = 0.5;
 ///////////////////////////////////////////////////////////////////
 void loop() {
 
-  delay(buttonDelay);
+  uint_fast8_t left = digitalRead(encoderLeftPin);
+  uint_fast8_t right = digitalRead(encoderRightPin);
+
+  if (left != lastLeft && right != lastRight) {
+    c++;
+    up();
+  }
+
+  if (left != lastLeft && right == lastRight) {
+    c--;
+    down();
+  }
+
+  if (lastC != c) {
+    lastLeft = digitalRead(encoderLeftPin);
+    lastRight = digitalRead(encoderRightPin);
+    lastC = c;
+    Serial.println(c);
+  }
+
 
   buttons = analogRead(BUTTONS_INPUT);
   // Serial.println(buttons);
