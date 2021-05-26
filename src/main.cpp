@@ -39,15 +39,19 @@ ArducamSSD1306 display(OLED_RESET); // FOR I2C
 
 
 // message types
-const byte type_brightness = 2;
-const byte type_density = 3;
-const byte type_sparkles = 4;
-const byte type_hue = 5;
-const byte type_cycle = 6;
-const byte type_streaks = 7;
-const byte type_solid = 8;
+const byte typeIgnore = 0;
+const byte typeCycle = 1;
+const byte typeBrightness = 2;
+const byte typeDensity = 3;
+const byte typeSparkles = 4;
+const byte typeHue = 5;
+const byte typeStreaks = 7;
+const byte typeSolid = 8;
+const byte typeSteal = 9;
 
 // MENU STATE
+const uint_fast8_t stealColorMenuIndex = 0;
+const uint_fast8_t hueMenuIndex = 7;
 const uint_fast8_t menuItemsCount = 8;
 MenuItem * menuItems[menuItemsCount];
 uint_fast8_t currentMenuItem = 0;
@@ -55,7 +59,6 @@ uint_fast8_t currentMenuItem = 0;
 // function defs
 void simpleDisplay(const char *message);
 void stealColor();
-void clearColor();
 void menu();
 void up();
 void down();
@@ -101,9 +104,9 @@ void setup()
 
   // MENU ITEMS
 
-  menuItems[0] = new MenuItemOnOff(display,
+  menuItems[stealColorMenuIndex] = new MenuItemOnOff(display,
     transmitter,
-    type_hue,
+    typeIgnore,
     "Steal",
     "Color",
     0,
@@ -112,7 +115,7 @@ void setup()
   // probably can just set this off in the loop after a few seconds
   menuItems[1] = new MenuItemOnOff(display,
     transmitter,
-    type_cycle,
+    typeCycle,
     "Cycle",
     "Colors",
     0,
@@ -120,7 +123,7 @@ void setup()
 
   menuItems[2] = new MenuItem(display,
     transmitter,
-    type_brightness,
+    typeBrightness,
     "Brightness",
     "",
     223,
@@ -128,7 +131,7 @@ void setup()
 
   menuItems[3] = new MenuItem(display,
     transmitter,
-    type_streaks,
+    typeStreaks,
     "Streaks",
     "",
     0,
@@ -136,7 +139,7 @@ void setup()
 
   menuItems[4] = new MenuItem(display,
     transmitter,
-    type_density,
+    typeDensity,
     "Music",
     "",
     23,
@@ -144,7 +147,7 @@ void setup()
 
   menuItems[5] = new MenuItem(display,
     transmitter,
-    type_sparkles,
+    typeSparkles,
     "Sparkles",
     "",
     65,
@@ -152,15 +155,15 @@ void setup()
 
   menuItems[6] = new MenuItemOnOff(display,
     transmitter,
-    type_solid,
+    typeSolid,
     "Solid",
     "",
     0,
     1);
 
-  menuItems[7] = new MenuItem(display,
+  menuItems[hueMenuIndex] = new MenuItem(display,
     transmitter,
-    type_hue,
+    typeHue,
     "Hue",
     "",
     0,
@@ -197,38 +200,28 @@ void loop() {
 
   if (buttons > 950) {
     menu();
+    delay(100);
     return;
   }
 
-  if (buttons > 600) {
-    down();
-    return;
-  }
+  touch1 = touchRead(TOUCH_1);
+  touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
 
-  if (buttons > 400) {
-    up();
-    return;
-  }
-
-  if (colorSensorOn) {
+  if (menuItems[stealColorMenuIndex]->getValue() > 0) {
     digitalWrite(LED_BUILTIN, HIGH);
-    touch1 = touchRead(TOUCH_1);
-    touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
+    if (touch1 >= touchAvg * touchThreshold && !readComplete) {
+      stealColor();
+      readComplete = true;
+    }
+
+    if (touch1 < touchAvg * touchThreshold) {
+      readComplete = false;
+    }
   } else {
     digitalWrite(LED_BUILTIN, LOW);
-    touch1 = touchAvg;
   }
 
-  if (touch1 >= touchAvg * touchThreshold && !readComplete) {
-    stealColor();
-    readComplete = true;
-  }
-
-  if (touch1 < touchAvg * touchThreshold) {
-    readComplete = false;
-  }
-
-  buttonDelay = fastButtonDelay;
+  // buttonDelay = fastButtonDelay;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -263,13 +256,11 @@ void menuPrevious() {
 void stealColor() {
   byte hue = readHue();
 
-  // Serial.println("stealColor");
-  // sendMessage(colorReadMessage, hue);
-}
+  Serial.println("stealColor");
 
-void clearColor() {
-  // Serial.println("clearColor");
-  // sendMessage(colorClearMessage, 0);
+  menuItems[hueMenuIndex]->setValue(hue);
+  transmitter.sendMessage(typeSteal, hue);
+
 }
 
 void simpleDisplay(const char *message) {
