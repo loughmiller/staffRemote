@@ -30,7 +30,7 @@ void Transmitter::sendMessage(byte messageType, byte data) {
   for(uint_fast8_t i=0; i<3;i++) {
     vw_send((uint8_t *)msg, sizeof(msg));
     vw_wait_tx(); // Wait until the whole message is gone
-    delay(25);
+    delay(50);
   }
 
   this->messageID++;

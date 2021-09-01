@@ -13,7 +13,7 @@
 // RADIO TRANSMITTER
 const byte authByteStart = 117;
 const byte authByteEnd = 115;
-const uint_fast8_t transmit_pin = 12;
+const uint_fast8_t transmit_pin = 14;
 Transmitter transmitter(transmit_pin, authByteStart, authByteEnd);
 
 // COLOR SENSOR
@@ -22,9 +22,8 @@ uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
 // BUTTONS
-const int buttons_vcc_pin = 15;
-#define BUTTONS_INPUT A0
-#define TOUCH_1 17
+#define BUTTONS_INPUT A3
+#define TOUCH_1 4
 
 const uint_fast16_t fastButtonDelay = 20;
 const uint_fast16_t slowButtonDelay = 500;
@@ -32,17 +31,6 @@ uint_fast16_t buttonDelay = fastButtonDelay;
 const float touchThreshold = 1.25;
 
 bool colorSensorOn = true;
-
-// ROTARY ENCODER
-const uint_fast8_t encoderLeftPin = 5;
-const uint_fast8_t encoderRightPin = 8;
-
-uint_fast8_t lastLeft = 0;
-uint_fast8_t lastRight = 0;
-
-int_fast16_t lastC = 0;
-int_fast16_t c = 0;
-
 
 // DISPLAY
 #define OLED_RESET  16  // Pin 15 -RESET digital signal
@@ -107,10 +95,6 @@ void setup()
   pinMode(BUTTONS_INPUT, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
 
-  pinMode(encoderLeftPin, INPUT);
-  pinMode(encoderRightPin, INPUT);
-
-
   // TRANSMITTER SETUP
   // const byte authByteStart = 117;
   // const byte authByteEnd = 115;
@@ -166,7 +150,7 @@ void setup()
     "Sparkles",
     "",
     65,
-    4);
+    8);
 
   menuItems[6] = new MenuItemOnOff(display,
     transmitter,
@@ -208,33 +192,29 @@ float gauge = 0.5;
 ///////////////////////////////////////////////////////////////////
 void loop() {
 
-  uint_fast8_t left = digitalRead(encoderLeftPin);
-  uint_fast8_t right = digitalRead(encoderRightPin);
-
-  if (left != lastLeft && right != lastRight) {
-    c++;
-    up();
-  }
-
-  if (left != lastLeft && right == lastRight) {
-    c--;
-    down();
-  }
-
-  if (lastC != c) {
-    lastLeft = digitalRead(encoderLeftPin);
-    lastRight = digitalRead(encoderRightPin);
-    lastC = c;
-    Serial.println(c);
-  }
-
-
   buttons = analogRead(BUTTONS_INPUT);
-  // Serial.println(buttons);
+  Serial.println(buttons);
+  delay(25);
 
   if (buttons > 950) {
-    menu();
-    delay(100);
+    up();
+    return;
+  }
+
+  if (buttons > 650) {
+    menuNext();
+    delay(200);
+    return;
+  }
+
+  if (buttons > 500) {
+    menuPrevious();
+    delay(200);
+    return;
+  }
+
+  if (buttons > 400) {
+    down();
     return;
   }
 
@@ -264,18 +244,18 @@ void loop() {
 
 
 void menu() {
-  buttonDelay = slowButtonDelay;
+  // buttonDelay = slowButtonDelay;
   menuNext();
 }
 
 void up() {
   menuItems[currentMenuItem]->incrementValue();
-  buttonDelay = fastButtonDelay;
+  // buttonDelay = fastButtonDelay;
 }
 
 void down() {
   menuItems[currentMenuItem]->decrementValue();
-  buttonDelay = fastButtonDelay;
+  // buttonDelay = fastButtonDelay;
 }
 
 void menuNext() {
@@ -285,6 +265,7 @@ void menuNext() {
 
 void menuPrevious() {
   currentMenuItem = (currentMenuItem - 1) % menuItemsCount;
+  menuItems[currentMenuItem]->displayNameAndGauge();
 }
 
 void stealColor() {
