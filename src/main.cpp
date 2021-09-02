@@ -197,24 +197,22 @@ void loop() {
   delay(25);
 
   if (buttons > 950) {
-    up();
+    down();
     return;
   }
 
   if (buttons > 650) {
-    menuNext();
-    delay(200);
+    menuPrevious();
     return;
   }
 
   if (buttons > 500) {
-    menuPrevious();
-    delay(200);
+    menuNext();
     return;
   }
 
   if (buttons > 400) {
-    down();
+    up();
     return;
   }
 
@@ -244,28 +242,27 @@ void loop() {
 
 
 void menu() {
-  // buttonDelay = slowButtonDelay;
   menuNext();
 }
 
 void up() {
   menuItems[currentMenuItem]->incrementValue();
-  // buttonDelay = fastButtonDelay;
 }
 
 void down() {
   menuItems[currentMenuItem]->decrementValue();
-  // buttonDelay = fastButtonDelay;
 }
 
 void menuNext() {
   currentMenuItem = (currentMenuItem + 1) % menuItemsCount;
   menuItems[currentMenuItem]->displayNameAndGauge();
+  delay(200);
 }
 
 void menuPrevious() {
   currentMenuItem = (currentMenuItem - 1) % menuItemsCount;
   menuItems[currentMenuItem]->displayNameAndGauge();
+  delay(200);
 }
 
 void stealColor() {
