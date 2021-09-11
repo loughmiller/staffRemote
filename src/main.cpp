@@ -28,7 +28,7 @@ uint8_t calcHue(float r, float g, float b);
 const uint_fast16_t fastButtonDelay = 20;
 const uint_fast16_t slowButtonDelay = 500;
 uint_fast16_t buttonDelay = fastButtonDelay;
-const float touchThreshold = 1.25;
+const float touchThreshold = 1.18;
 
 bool colorSensorOn = true;
 
