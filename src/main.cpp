@@ -133,8 +133,8 @@ void setup()
     typeStreaks,
     "Streaks",
     "",
-    0,
-    1);
+    1,
+    8);
 
   menuItems[4] = new MenuItem(display,
     transmitter,
