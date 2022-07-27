@@ -1,160 +1,291 @@
 #include <Arduino.h>
-#include <VirtualWire.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <VirtualWire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TCS34725.h>
+#include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
+#include <Adafruit_GFX.h>   // Needs a little change in original Adafruit library (See README.txt file)
+#include "menuItem.h"
+#include "menuItemOnOff.h"
+#include "transmitter.h"
 
 // RADIO TRANSMITTER
-const int transmit_pin = 12;
-byte messageID = 0;
-
-const byte colorReadMessage = 0;
-const byte colorClearMessage = 1;
-const byte brightnessUpMessage = 2;
-const byte brightnessDownMessage = 3;
-const byte densityUpMessage = 4;
-const byte densityDownMessage = 5;
-
-void stealColor();
-void clearColor();
-void brightnessUp();
-void brightnessDown();
-void densityUp();
-void densityDown();
-void sendMessage(byte messageID, byte messageType, byte data);
+const byte authByteStart = 117;
+const byte authByteEnd = 115;
+const uint_fast8_t transmit_pin = 14;
+Transmitter transmitter(transmit_pin, authByteStart, authByteEnd);
 
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
-// BUTTON POWER PIN
-#define BUTTON_1 20
-#define BUTTON_2 17
+// BUTTONS
+#define BUTTONS_INPUT A3
+#define TOUCH_1 4
 
-uint_fast8_t mode = 0;
-const uint_fast8_t modes = 3;
+const uint_fast16_t fastButtonDelay = 20;
+const uint_fast16_t slowButtonDelay = 500;
+uint_fast16_t buttonDelay = fastButtonDelay;
+const float touchThreshold = 1.18;
 
+bool colorSensorOn = true;
+
+// DISPLAY
+#define OLED_RESET  16  // Pin 15 -RESET digital signal
+ArducamSSD1306 display(OLED_RESET); // FOR I2C
+
+
+// message types
+const byte typeIgnore = 0;
+const byte typeCycle = 1;
+const byte typeBrightness = 2;
+const byte typeDensity = 3;
+const byte typeSparkles = 4;
+const byte typeHue = 5;
+const byte typeStreaks = 7;
+const byte typeSolid = 8;
+const byte typeSteal = 9;
+
+// MENU STATE
+const uint_fast8_t stealColorMenuIndex = 0;
+const uint_fast8_t hueMenuIndex = 7;
+const uint_fast8_t menuItemsCount = 8;
+MenuItem * menuItems[menuItemsCount];
+uint_fast8_t currentMenuItem = 0;
+
+// function defs
+void simpleDisplay(const char *message);
+void stealColor();
+void menu();
+void up();
+void down();
+void menuNext();
+void menuPrevious();
+
+///////////////////////////////////////////////////////////////////
+// SETUP
+///////////////////////////////////////////////////////////////////
 void setup()
 {
-  delay(6000);
-  Serial.begin(9600);	// Debugging only
-  Serial.println("setup");
+  // DISPLAY - SSD1306 Init
+  display.begin();  // Switch OLED
+  display.setTextColor(WHITE);
 
-  pinMode(BUTTON_1, INPUT);
-  pinMode(BUTTON_2, INPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  // TRANSMITTER SETUP
-  Serial.println("setup transmitter");
-  vw_set_tx_pin(transmit_pin);
-  vw_setup(2000);	 // Bits per sec
-  Serial.println("transmitter ready");
+  simpleDisplay("booting");
 
   // COLOR SENSOR SETUP
   if (tcs.begin()) {
     Serial.println("Found color sensor");
     tcs.setInterrupt(true);
   } else {
-    Serial.println("No color sensor found!");
-    while (true) {
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(200);
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(200);
-    }
+    simpleDisplay("no color  sensor");
+    delay(5);
   }
 
-  digitalWrite(LED_BUILTIN, HIGH);
+  uint_fast16_t colorSensorSetupTime = millis();
+
+  // SETUP SERIAL CONNECTION FOR LOGGING
+  while(!Serial && millis() < (colorSensorSetupTime + 10000));
+  Serial.println("setup");
+
+  // Use pulldown where buttons connect to vcc on press with resistors
+  // to distingish different buttons on one input line
+  pinMode(BUTTONS_INPUT, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  // TRANSMITTER SETUP
+  // const byte authByteStart = 117;
+  // const byte authByteEnd = 115;
+  // const uint_fast8_t transmit_pin = 12;
+  // transmitter = new Transmitter(transmit_pin, authByteStart, authByteEnd);
+
+  // MENU ITEMS
+
+  menuItems[stealColorMenuIndex] = new MenuItemOnOff(display,
+    transmitter,
+    typeIgnore,
+    "Steal",
+    "Color",
+    0,
+    1);
+
+  // probably can just set this off in the loop after a few seconds
+  menuItems[1] = new MenuItemOnOff(display,
+    transmitter,
+    typeCycle,
+    "Cycle",
+    "Colors",
+    0,
+    1);
+
+  menuItems[2] = new MenuItem(display,
+    transmitter,
+    typeBrightness,
+    "Brightness",
+    "",
+    223,
+    8);
+
+  menuItems[3] = new MenuItem(display,
+    transmitter,
+    typeStreaks,
+    "Streaks",
+    "",
+    1,
+    8);
+
+  menuItems[4] = new MenuItem(display,
+    transmitter,
+    typeDensity,
+    "Music",
+    "",
+    23,
+    4);
+
+  menuItems[5] = new MenuItem(display,
+    transmitter,
+    typeSparkles,
+    "Sparkles",
+    "",
+    65,
+    8);
+
+  menuItems[6] = new MenuItemOnOff(display,
+    transmitter,
+    typeSolid,
+    "Solid",
+    "",
+    0,
+    1);
+
+  menuItems[hueMenuIndex] = new MenuItem(display,
+    transmitter,
+    typeHue,
+    "Hue",
+    "",
+    0,
+    2);
+
+  simpleDisplay("booting   complete");
+
+  menuItems[currentMenuItem]->displayNameAndGauge();
 }
+///////////////////////////////////////////////////////////////////
+// \ SETUP END /
+///////////////////////////////////////////////////////////////////
+
 
 bool readComplete = false;
+bool buttonStabalizing = false;
 
-int button1;
-int button2;
+uint_fast16_t buttons = 0;
+uint_fast16_t lastButtons = 0;
+uint_fast16_t touch1 = 0;
+uint_fast16_t touchAvg = 10000;
 
-void loop()
-{
-  button1 = digitalRead(BUTTON_1);
-  button2 = digitalRead(BUTTON_2);
+float gauge = 0.5;
 
-  Serial.print(mode);
-  Serial.print("\t");
-  Serial.print(button1);
-  Serial.print("\t");
-  Serial.println(button2);
+///////////////////////////////////////////////////////////////////
+// LOOP
+///////////////////////////////////////////////////////////////////
+void loop() {
 
-  // currentTime = millis();
+  buttons = analogRead(BUTTONS_INPUT);
+  Serial.println(buttons);
+  delay(25);
 
-
-  if (!button1 && !button2) {
-    digitalWrite(LED_BUILTIN, LOW);
-    readComplete = false;
-    messageID++;
-  } else {
-    digitalWrite(LED_BUILTIN, HIGH);
-
-    if (button1 && button2) {
-      mode = (mode + 1) % modes;
-    } else {
-      switch (mode) {
-        case 0:
-          if (button1) { stealColor(); }
-          if (button2) { clearColor(); }
-        break;
-        case 1:
-          if (button1) { brightnessUp(); }
-          if (button2) { brightnessDown(); }
-          messageID++;
-        break;
-        case 2:
-          if (button1) { densityUp(); }
-          if (button2) { densityDown(); }
-          messageID++;
-        break;
-      }
-    }
-
-    // debounce
-    delay(300);
+  if (buttons > 950) {
+    down();
+    return;
   }
 
-  delay(100);
+  if (buttons > 650) {
+    menuPrevious();
+    return;
+  }
+
+  if (buttons > 500) {
+    menuNext();
+    return;
+  }
+
+  if (buttons > 400) {
+    up();
+    return;
+  }
+
+  touch1 = touchRead(TOUCH_1);
+  touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
+
+  if (menuItems[stealColorMenuIndex]->getValue() > 0) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    if (touch1 >= touchAvg * touchThreshold && !readComplete) {
+      stealColor();
+      readComplete = true;
+    }
+
+    if (touch1 < touchAvg * touchThreshold) {
+      readComplete = false;
+    }
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+
+  // buttonDelay = fastButtonDelay;
+}
+
+///////////////////////////////////////////////////////////////////
+// \ LOOP END /
+///////////////////////////////////////////////////////////////////
+
+
+void menu() {
+  menuNext();
+}
+
+void up() {
+  menuItems[currentMenuItem]->incrementValue();
+}
+
+void down() {
+  menuItems[currentMenuItem]->decrementValue();
+}
+
+void menuNext() {
+  currentMenuItem = (currentMenuItem + 1) % menuItemsCount;
+  menuItems[currentMenuItem]->displayNameAndGauge();
+  delay(200);
+}
+
+void menuPrevious() {
+  currentMenuItem = (currentMenuItem - 1) % menuItemsCount;
+  menuItems[currentMenuItem]->displayNameAndGauge();
+  delay(200);
 }
 
 void stealColor() {
   byte hue = readHue();
-  readComplete = true;
-  sendMessage(messageID, colorReadMessage, hue);
+
+  Serial.println("stealColor");
+
+  menuItems[hueMenuIndex]->setValue(hue);
+  transmitter.sendMessage(typeSteal, hue);
+
 }
 
-void clearColor() {
-  sendMessage(messageID, colorClearMessage, 0);
+void simpleDisplay(const char *message) {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(1, 16);
+  display.print(message);
+  display.display();
 }
 
-void brightnessUp() {
-  sendMessage(messageID, brightnessUpMessage, 0);
-}
-
-void brightnessDown() {
-  sendMessage(messageID, brightnessDownMessage, 0);
-}
-
-void densityUp() {
-  sendMessage(messageID, densityUpMessage, 0);
-}
-
-void densityDown() {
-  sendMessage(messageID, densityDownMessage, 0);
-}
-
-void sendMessage(byte messageID, byte messageType, byte data) {
-    byte msg[3] = {messageID, messageType, data};
-
-    vw_send((uint8_t *)msg, 3);
-    vw_wait_tx(); // Wait until the whole message is gone
-}
+///////////////////////////////////////////////////////////////////
+// COLOR SENSOR FUNCTIONS
+///////////////////////////////////////////////////////////////////
 
 uint8_t readHue() {
   uint16_t clear, red, green, blue;
@@ -194,3 +325,7 @@ uint8_t calcHue(float r, float g, float b) {
 
   return (uint8_t)((hue/360) * 255);
 }
+
+///////////////////////////////////////////////////////////////////
+// \ COLOR SENSOR FUNCTIONS END /
+///////////////////////////////////////////////////////////////////
