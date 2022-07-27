@@ -9,31 +9,55 @@
 #include "menuItem.h"
 #include "menuItemOnOff.h"
 #include "transmitter.h"
+#include <Encoder.h>
+
+
+
+/*
+                    ┌───────────────┐
+                    │GND         Vin│
+                    │0           GND│
+                    │1           3.3│
+                    │2            23│
+                    │3            22│
+                    │4            21│
+                    │5            20│
+                    │6            19│ - SCL
+                    │7            18│ - SDA
+                    │8            17│
+                    │9            16│
+        reSwitchPin │10   3 G P   15│
+          reDTPin - │11 1 . N G 2 14│ - transmitPin
+         reCLKPin - │12 7 3 D M 6 13│
+                    └───────────────┘
+*/
 
 // RADIO TRANSMITTER
 const byte authByteStart = 117;
 const byte authByteEnd = 115;
-const uint_fast8_t transmit_pin = 14;
-Transmitter transmitter(transmit_pin, authByteStart, authByteEnd);
+const uint_fast8_t transmitPin = 14;
+Transmitter transmitter(transmitPin, authByteStart, authByteEnd);
 
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 
-// BUTTONS
-#define BUTTONS_INPUT A3
-#define TOUCH_1 4
+// ROTARY ENCODER
+const uint_fast8_t reSwitchPin = 10;
+const uint_fast8_t reDTPin = 11;
+const uint_fast8_t reCLKPin = 12;
+uint8_t reOldPosition = 128;
+Encoder myEnc(reDTPin, reCLKPin);
 
-const uint_fast16_t fastButtonDelay = 20;
-const uint_fast16_t slowButtonDelay = 500;
-uint_fast16_t buttonDelay = fastButtonDelay;
-const float touchThreshold = 1.18;
+// BUTTON
+
+
 
 bool colorSensorOn = true;
 
 // DISPLAY
-#define OLED_RESET  16  // Pin 15 -RESET digital signal
+#define OLED_RESET  16  // -RESET digital signal
 ArducamSSD1306 display(OLED_RESET); // FOR I2C
 
 
@@ -90,16 +114,8 @@ void setup()
   while(!Serial && millis() < (colorSensorSetupTime + 10000));
   Serial.println("setup");
 
-  // Use pulldown where buttons connect to vcc on press with resistors
-  // to distingish different buttons on one input line
-  pinMode(BUTTONS_INPUT, INPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  // TRANSMITTER SETUP
-  // const byte authByteStart = 117;
-  // const byte authByteEnd = 115;
-  // const uint_fast8_t transmit_pin = 12;
-  // transmitter = new Transmitter(transmit_pin, authByteStart, authByteEnd);
+  // ROTARY ENCODER SETUP
+  pinMode(reSwitchPin, INPUT);
 
   // MENU ITEMS
 
@@ -182,58 +198,43 @@ bool buttonStabalizing = false;
 
 uint_fast16_t buttons = 0;
 uint_fast16_t lastButtons = 0;
-uint_fast16_t touch1 = 0;
-uint_fast16_t touchAvg = 10000;
 
 float gauge = 0.5;
+
+bool lastReSwitchPin = HIGH;
 
 ///////////////////////////////////////////////////////////////////
 // LOOP
 ///////////////////////////////////////////////////////////////////
 void loop() {
+  bool currentReSwitchPin = digitalRead(reSwitchPin);
 
-  buttons = analogRead(BUTTONS_INPUT);
-  Serial.println(buttons);
-  delay(25);
-
-  if (buttons > 950) {
-    down();
-    return;
+  // PUSH BUTTON
+  if (lastReSwitchPin == HIGH && currentReSwitchPin == LOW) {
+    myEnc.write(currentMenuItem * 4);
   }
 
-  if (buttons > 650) {
-    menuPrevious();
-    return;
+  // RELEASE BUTTON
+  if (lastReSwitchPin == LOW && currentReSwitchPin == HIGH) {
+    myEnc.write(menuItems[currentMenuItem]->getValue());
   }
 
-  if (buttons > 500) {
-    menuNext();
-    return;
-  }
+  uint8_t position = myEnc.read();
+  if (position != reOldPosition) {
+    Serial.print("position: ");
+    Serial.println(position);
+    reOldPosition = position;
 
-  if (buttons > 400) {
-    up();
-    return;
-  }
 
-  touch1 = touchRead(TOUCH_1);
-  touchAvg = (float)touch1 * 0.02 + (float)touchAvg * 0.98;
-
-  if (menuItems[stealColorMenuIndex]->getValue() > 0) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    if (touch1 >= touchAvg * touchThreshold && !readComplete) {
-      stealColor();
-      readComplete = true;
+    if (currentReSwitchPin == LOW) {
+      currentMenuItem = (position/4) % menuItemsCount;
+      menuItems[currentMenuItem]->displayNameAndGauge();
+    } else {
+      menuItems[currentMenuItem]->setValue(position);
     }
 
-    if (touch1 < touchAvg * touchThreshold) {
-      readComplete = false;
-    }
-  } else {
-    digitalWrite(LED_BUILTIN, LOW);
+    lastReSwitchPin = currentReSwitchPin;
   }
-
-  // buttonDelay = fastButtonDelay;
 }
 
 ///////////////////////////////////////////////////////////////////
