@@ -10,6 +10,8 @@
 #include "menuItemOnOff.h"
 #include "transmitter.h"
 #include <Encoder.h>
+#include <Visualization.h>
+#include <Sparkle.h>
 
 
 
@@ -60,6 +62,20 @@ bool colorSensorOn = true;
 #define OLED_RESET  16  // -RESET digital signal
 ArducamSSD1306 display(OLED_RESET); // FOR I2C
 
+// LEDS
+// FAST LED
+#define NUM_LEDS 10
+#define ROWS 1
+#define COLUMNS 10
+#define DISPLAY_LED_PIN 1
+
+CRGB leds[NUM_LEDS];
+CRGB off;
+
+Visualization * all;
+Sparkle * sparkle;
+
+
 
 // message types
 const byte typeIgnore = 0;
@@ -87,6 +103,7 @@ void up();
 void down();
 void menuNext();
 void menuPrevious();
+void setAll(CRGB color);
 
 ///////////////////////////////////////////////////////////////////
 // SETUP
@@ -96,6 +113,12 @@ void setup()
   // DISPLAY - SSD1306 Init
   display.begin();  // Switch OLED
   display.setTextColor(WHITE);
+
+  // BOOT SEQUENCE
+  // all->setAllCRGB(0x001000);
+  // FastLED.show();
+  // delay(1000);
+
 
   simpleDisplay("booting");
 
@@ -117,8 +140,12 @@ void setup()
   // ROTARY ENCODER SETUP
   pinMode(reSwitchPin, INPUT);
 
-  // MENU ITEMS
+  // LED SETUP
+  FastLED.addLeds<NEOPIXEL, DISPLAY_LED_PIN>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );;
+  sparkle = new Sparkle(NUM_LEDS, 0, 0, leds, 567);
 
+
+  // MENU ITEMS
   menuItems[stealColorMenuIndex] = new MenuItemOnOff(display,
     transmitter,
     typeIgnore,
@@ -207,6 +234,7 @@ bool lastReSwitchPin = HIGH;
 // LOOP
 ///////////////////////////////////////////////////////////////////
 void loop() {
+  setAll(0x000000);
   bool currentReSwitchPin = digitalRead(reSwitchPin);
 
   // PUSH BUTTON
@@ -235,6 +263,11 @@ void loop() {
 
     lastReSwitchPin = currentReSwitchPin;
   }
+
+  sparkle->display();
+
+  FastLED.show();
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -284,6 +317,11 @@ void simpleDisplay(const char *message) {
   display.display();
 }
 
+void setAll(CRGB color) {
+  for (uint_fast16_t i=0; i<NUM_LEDS; i++) {
+    leds[i] = color;
+  }
+}
 ///////////////////////////////////////////////////////////////////
 // COLOR SENSOR FUNCTIONS
 ///////////////////////////////////////////////////////////////////
