@@ -25,6 +25,10 @@ void MenuItem::decrementValue() {
 }
 
 void MenuItem::setValue(uint_fast8_t value) {
+  Serial.print("MenuItem::setValue");
+  Serial.print("\t");
+  Serial.println(value);
+
   this->value = value % 256;
   this->transmitter->sendMessage(this->messageType, this->value);
   this->displayNameAndGauge();

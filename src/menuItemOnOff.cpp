@@ -17,3 +17,20 @@ void MenuItemOnOff::incrementValue() {
 void MenuItemOnOff::decrementValue() {
   this->setValue(0);
 }
+
+void MenuItemOnOff::setValue(uint_fast8_t value) {
+  // Serial.print("MenuItemOnOff::setValue");
+  // Serial.print("\t");
+  // Serial.println(value);
+
+  Serial.print(value/4);
+  Serial.print("\t");
+  Serial.println(((value / 4) % 2));
+  if (((value / 4) % 2) == 1) {
+    // ON
+    MenuItem::setValue(255);
+  } else {
+    // OFF
+    MenuItem::setValue(0);
+  }
+}

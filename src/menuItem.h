@@ -39,7 +39,7 @@ class MenuItem {
       const uint_fast8_t increment);
     void virtual incrementValue();
     void virtual decrementValue();
-    void setValue(uint_fast8_t value);
+    void virtual setValue(uint_fast8_t value);
     uint_fast8_t getValue();
     void setIncrement(uint_fast8_t increment);
     void displayNameAndGauge();
