@@ -157,12 +157,12 @@ void setup()
     1);
 
   // probably can just set this off in the loop after a few seconds
-  menuItems[1] = new MenuItemOnOff(display,
+  menuItems[1] = new MenuItem(display,
     transmitter,
     typeCycle,
     "Cycle",
     "Colors",
-    0,
+    64,
     1);
 
   menuItems[2] = new MenuItem(display,
