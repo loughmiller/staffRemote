@@ -14,6 +14,9 @@ Transmitter::Transmitter(const uint_fast8_t transmit_pin,
 }
 
 void Transmitter::sendMessage(byte messageType, byte data) {
+  Serial.println("Transmitter::sendMessage");
+  if (messageType == 0) return;  // ignore type
+
   byte msg[5] = {this->authByteStart,
     this->messageID,
     messageType,

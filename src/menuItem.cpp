@@ -24,14 +24,17 @@ void MenuItem::decrementValue() {
   this->setValue(this->value - this->increment);
 }
 
-void MenuItem::setValue(uint_fast8_t value) {
+void MenuItem::setValue(uint_fast8_t value, bool display) {
   Serial.print("MenuItem::setValue");
   Serial.print("\t");
   Serial.println(value);
 
   this->value = value % 256;
   this->transmitter->sendMessage(this->messageType, this->value);
-  this->displayNameAndGauge();
+
+  if (display) {
+    this->displayNameAndGauge();
+  }
 }
 
 uint_fast8_t MenuItem::getValue() {

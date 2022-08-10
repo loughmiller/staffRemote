@@ -44,6 +44,7 @@ Transmitter transmitter(transmitPin, authByteStart, authByteEnd);
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
+byte stolenHue;
 
 // ROTARY ENCODER
 const uint_fast8_t reSwitchPin = 10;
@@ -98,6 +99,7 @@ uint_fast8_t currentMenuItem = 0;
 // function defs
 void simpleDisplay(const char *message);
 void stealColor();
+void sendColor();
 void menu();
 void up();
 void down();
@@ -239,17 +241,28 @@ void loop() {
 
   // PUSH BUTTON
   if (lastReSwitchPin == HIGH && currentReSwitchPin == LOW) {
-    myEnc.write(currentMenuItem * 4);
+    if (currentMenuItem == stealColorMenuIndex && menuItems[stealColorMenuIndex]->getValue() > 0) {
+      stealColor();
+    } else {
+      myEnc.write(currentMenuItem * 4);
+    }
   }
 
   // RELEASE BUTTON
   if (lastReSwitchPin == LOW && currentReSwitchPin == HIGH) {
-    myEnc.write(menuItems[currentMenuItem]->getValue());
+    if (currentMenuItem == stealColorMenuIndex && menuItems[stealColorMenuIndex]->getValue() > 0) {
+      sendColor();
+    } else {
+      myEnc.write(menuItems[currentMenuItem]->getValue());
+    }
+
   }
 
   uint8_t position = myEnc.read();
   if (position != reOldPosition) {
-    Serial.print("position: ");
+    Serial.print("Current Menu: ");
+    Serial.print(currentMenuItem);
+    Serial.print("\tPosition: ");
     Serial.println(position);
     reOldPosition = position;
 
@@ -260,9 +273,9 @@ void loop() {
     } else {
       menuItems[currentMenuItem]->setValue(position);
     }
-
-    lastReSwitchPin = currentReSwitchPin;
   }
+
+  lastReSwitchPin = currentReSwitchPin;
 
   sparkle->display();
 
@@ -300,13 +313,13 @@ void menuPrevious() {
 }
 
 void stealColor() {
-  byte hue = readHue();
-
   Serial.println("stealColor");
+  stolenHue = readHue();
+}
 
-  menuItems[hueMenuIndex]->setValue(hue);
-  transmitter.sendMessage(typeSteal, hue);
-
+void sendColor() {
+  menuItems[hueMenuIndex]->setValue(stolenHue, false);
+  transmitter.sendMessage(typeSteal, stolenHue);
 }
 
 void simpleDisplay(const char *message) {

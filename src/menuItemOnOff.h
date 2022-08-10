@@ -15,7 +15,7 @@ class MenuItemOnOff : public MenuItem {
       const uint_fast8_t increment);
     void incrementValue();
     void decrementValue();
-    void setValue(uint_fast8_t value);
+    void setValue(uint_fast8_t value, bool display = true);
 };
 
 #endif /* MENU_ITEM_STEAL_COLOR_H */
