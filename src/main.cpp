@@ -45,6 +45,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 uint8_t readHue();
 uint8_t calcHue(float r, float g, float b);
 byte stolenHue;
+uint_fast32_t colorStealTimestamp = 0;
 
 // ROTARY ENCODER
 const uint_fast8_t reSwitchPin = 10;
@@ -52,10 +53,6 @@ const uint_fast8_t reDTPin = 11;
 const uint_fast8_t reCLKPin = 12;
 uint8_t reOldPosition = 128;
 Encoder myEnc(reDTPin, reCLKPin);
-
-// BUTTON
-
-
 
 bool colorSensorOn = true;
 
@@ -65,9 +62,9 @@ ArducamSSD1306 display(OLED_RESET); // FOR I2C
 
 // LEDS
 // FAST LED
-#define NUM_LEDS 10
+#define NUM_LEDS 40
 #define ROWS 1
-#define COLUMNS 10
+#define COLUMNS 40
 #define DISPLAY_LED_PIN 1
 
 CRGB leds[NUM_LEDS];
@@ -121,7 +118,6 @@ void setup()
   // FastLED.show();
   // delay(1000);
 
-
   simpleDisplay("booting");
 
   // COLOR SENSOR SETUP
@@ -136,15 +132,15 @@ void setup()
   uint_fast16_t colorSensorSetupTime = millis();
 
   // SETUP SERIAL CONNECTION FOR LOGGING
-  while(!Serial && millis() < (colorSensorSetupTime + 10000));
+  while(!Serial && millis() < (colorSensorSetupTime + 5000));
   Serial.println("setup");
 
   // ROTARY ENCODER SETUP
   pinMode(reSwitchPin, INPUT);
 
   // LED SETUP
-  FastLED.addLeds<NEOPIXEL, DISPLAY_LED_PIN>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );;
-  sparkle = new Sparkle(NUM_LEDS, 0, 0, leds, 567);
+  FastLED.addLeds<WS2812B, DISPLAY_LED_PIN, RGB>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );;
+  sparkle = new Sparkle(NUM_LEDS, 0, 244, leds, 557); // 5567
 
 
   // MENU ITEMS
@@ -277,6 +273,23 @@ void loop() {
 
   lastReSwitchPin = currentReSwitchPin;
 
+  if (colorStealTimestamp > 0) {
+    uint_fast16_t d = 1000;
+    int_fast16_t speedup = (currentTime - (colorStealTimestamp - 1000))/6;
+    speedup = min(max(speedup, 0), (d-1));
+    uint_fast8_t extract = min(NUM_LEDS - 1, (currentTime - colorStealTimestamp) / (d-speedup)) + 1;
+
+    // Serial.print(currentTime - colorStealTimestamp);
+    // Serial.print("\t");
+    // Serial.print(speedup);
+    // Serial.print("\t");
+    // Serial.println(extract);
+
+    for (uint_fast8_t i = 0; i < extract; i++) {
+      leds[(NUM_LEDS - 1) - i] = CHSV(stolenHue, 244, 200);
+    }
+  }
+
   sparkle->display();
 
   FastLED.show();
@@ -315,11 +328,13 @@ void menuPrevious() {
 void stealColor() {
   Serial.println("stealColor");
   stolenHue = readHue();
+  colorStealTimestamp = millis();
 }
 
 void sendColor() {
   menuItems[hueMenuIndex]->setValue(stolenHue, false);
   transmitter.sendMessage(typeSteal, stolenHue);
+  colorStealTimestamp = 0;
 }
 
 void simpleDisplay(const char *message) {
