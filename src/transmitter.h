@@ -17,6 +17,7 @@ class Transmitter {
       const byte authByteStart,
       const byte authByteEnd);
     void sendMessage(byte messageType, byte data);
+    void sendSync(uint32_t sync);
 };
 
 #endif /* TRANSMITTER_H */

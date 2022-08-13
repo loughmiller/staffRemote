@@ -67,6 +67,11 @@ ArducamSSD1306 display(OLED_RESET); // FOR I2C
 #define COLUMNS 40
 #define DISPLAY_LED_PIN 1
 
+uint32_t lastSync = 0;
+uint32_t driftOffset = 86400000; // 24h
+uint_fast8_t drift = 64;
+uint_fast8_t hue = 0;
+
 CRGB leds[NUM_LEDS];
 CRGB off;
 
@@ -232,7 +237,21 @@ bool lastReSwitchPin = HIGH;
 // LOOP
 ///////////////////////////////////////////////////////////////////
 void loop() {
-  setAll(0x000000);
+  setAll(0x000000);  // clear leds
+
+  uint_fast32_t currentTime = millis();
+  uint_fast32_t driftSync = currentTime + driftOffset;
+
+  if (driftSync > lastSync + 60000) {
+    lastSync = driftSync;
+    transmitter.sendSync(driftSync);
+  }
+
+  if (drift > 0) {
+    hue = (driftSync / drift) % 256;
+    sparkle->setHue(hue);
+  }
+
   bool currentReSwitchPin = digitalRead(reSwitchPin);
 
   // PUSH BUTTON

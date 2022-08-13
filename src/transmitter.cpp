@@ -38,3 +38,25 @@ void Transmitter::sendMessage(byte messageType, byte data) {
 
   this->messageID++;
 }
+
+void Transmitter::sendSync(uint32_t sync) {
+  Serial.println("Transmitter::sendSync");
+  byte msg[6] = {this->authByteStart,
+    (byte)(sync >> 24),
+    (byte)(sync >> 16),
+    (byte)(sync >> 8),
+    (byte)(sync),
+    this->authByteEnd};
+
+  Serial.print(this->messageID);
+  Serial.print("\t");
+  Serial.print("sync");
+  Serial.print("\t");
+  Serial.print(sync);
+  Serial.println("");
+
+  vw_send((uint8_t *)msg, sizeof(msg));
+  vw_wait_tx(); // Wait until the whole message is gone
+
+  this->messageID++;
+}
