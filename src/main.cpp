@@ -270,24 +270,6 @@ void loop() {
     } else {
       myEnc.write(menuItems[currentMenuItem]->getValue());
     }
-
-  }
-
-  uint8_t position = myEnc.read();
-  if (position != reOldPosition) {
-    Serial.print("Current Menu: ");
-    Serial.print(currentMenuItem);
-    Serial.print("\tPosition: ");
-    Serial.println(position);
-    reOldPosition = position;
-
-
-    if (currentReSwitchPin == LOW) {
-      currentMenuItem = (position/4) % menuItemsCount;
-      menuItems[currentMenuItem]->displayNameAndGauge();
-    } else {
-      menuItems[currentMenuItem]->setValue(position);
-    }
   }
 
   lastReSwitchPin = currentReSwitchPin;
@@ -307,6 +289,24 @@ void loop() {
     for (uint_fast8_t i = 0; i < extract; i++) {
       leds[(NUM_LEDS - 1) - i] = CHSV(stolenHue, 244, 200);
     }
+  } else {
+    uint8_t position = myEnc.read();
+    if (position != reOldPosition) {
+      Serial.print("Current Menu: ");
+      Serial.print(currentMenuItem);
+      Serial.print("\tPosition: ");
+      Serial.println(position);
+      reOldPosition = position;
+
+
+      if (currentReSwitchPin == LOW) {
+        currentMenuItem = (position/4) % menuItemsCount;
+        menuItems[currentMenuItem]->displayNameAndGauge();
+      } else {
+        menuItems[currentMenuItem]->setValue(position);
+      }
+  }
+
   }
 
   sparkle->display();
