@@ -243,7 +243,7 @@ void loop() {
   uint_fast32_t currentTime = millis();
   uint_fast32_t driftSync = currentTime + driftOffset;
 
-  if (driftSync > lastSync + 5000) {
+  if (driftSync > lastSync + 10000) {
     lastSync = driftSync;
     transmitter.sendSync(typeSync, driftSync);
   }
