@@ -39,9 +39,10 @@ void Transmitter::sendMessage(byte messageType, byte data) {
   this->messageID++;
 }
 
-void Transmitter::sendSync(uint32_t sync) {
+void Transmitter::sendSync(byte messageType, uint32_t sync) {
   Serial.println("Transmitter::sendSync");
-  byte msg[6] = {this->authByteStart,
+  byte msg[7] = {this->authByteStart,
+    this->messageID,
     (byte)(sync >> 24),
     (byte)(sync >> 16),
     (byte)(sync >> 8),
@@ -50,7 +51,7 @@ void Transmitter::sendSync(uint32_t sync) {
 
   Serial.print(this->messageID);
   Serial.print("\t");
-  Serial.print("sync");
+  Serial.print(messageType);
   Serial.print("\t");
   Serial.print(sync);
   Serial.println("");

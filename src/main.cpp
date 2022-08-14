@@ -90,6 +90,7 @@ const byte typeHue = 5;
 const byte typeStreaks = 7;
 const byte typeSolid = 8;
 const byte typeSteal = 9;
+const byte typeSync = 10;
 
 // MENU STATE
 const uint_fast8_t stealColorMenuIndex = 0;
@@ -152,7 +153,7 @@ void setup()
   menuItems[stealColorMenuIndex] = new MenuItemOnOff(display,
     transmitter,
     typeIgnore,
-    "Steal",
+    "Extract",
     "Color",
     0,
     1);
@@ -242,9 +243,9 @@ void loop() {
   uint_fast32_t currentTime = millis();
   uint_fast32_t driftSync = currentTime + driftOffset;
 
-  if (driftSync > lastSync + 60000) {
+  if (driftSync > lastSync + 5000) {
     lastSync = driftSync;
-    transmitter.sendSync(driftSync);
+    transmitter.sendSync(typeSync, driftSync);
   }
 
   if (drift > 0) {
@@ -305,14 +306,11 @@ void loop() {
       } else {
         menuItems[currentMenuItem]->setValue(position);
       }
-  }
-
+    }
   }
 
   sparkle->display();
-
   FastLED.show();
-
 }
 
 ///////////////////////////////////////////////////////////////////
