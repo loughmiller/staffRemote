@@ -148,6 +148,7 @@ void setup()
   // LED SETUP
   FastLED.addLeds<WS2812B, DISPLAY_LED_PIN, RGB>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );;
   sparkle = new Sparkle(NUM_LEDS, 0, 244, leds, 557); // 5567
+  sparkle->setDriftOffset(driftOffset);
 
 
   // MENU ITEMS
@@ -249,11 +250,6 @@ void loop() {
     transmitter.sendSync(typeSync, driftSync);
   }
 
-  if (drift > 0) {
-    hue = (driftSync / drift) % 256;
-    sparkle->setHue(hue);
-  }
-
   bool currentReSwitchPin = digitalRead(reSwitchPin);
 
   // PUSH BUTTON
@@ -310,7 +306,7 @@ void loop() {
     }
   }
 
-  sparkle->display();
+  sparkle->display(currentTime);
   FastLED.show();
 }
 
