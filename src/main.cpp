@@ -1,7 +1,5 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <SPI.h>
-#include <VirtualWire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TCS34725.h>
 #include <ArducamSSD1306.h>    // Modification of Adafruit_SSD1306 for ESP8266 compatibility
@@ -38,7 +36,8 @@
 const byte authByteStart = 117;
 const byte authByteEnd = 115;
 const uint_fast8_t transmitPin = 14;
-Transmitter transmitter(transmitPin, authByteStart, authByteEnd);
+RH_ASK driver(2000, 0, transmitPin);
+Transmitter transmitter(driver, authByteStart, authByteEnd);
 
 // COLOR SENSOR
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
@@ -138,7 +137,7 @@ void setup()
   uint_fast16_t colorSensorSetupTime = millis();
 
   // SETUP SERIAL CONNECTION FOR LOGGING
-  while(!Serial && millis() < (colorSensorSetupTime + 5000));
+  while(!Serial && millis() < (colorSensorSetupTime + 50000));
   Serial.println("setup");
 
   // ROTARY ENCODER SETUP

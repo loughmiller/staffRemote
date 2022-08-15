@@ -1,15 +1,19 @@
 #include "transmitter.h"
 
-Transmitter::Transmitter(const uint_fast8_t transmit_pin,
+Transmitter::Transmitter(RH_ASK driver,
       const byte authByteStart,
       const byte authByteEnd) {
-  this->transmit_pin = transmit_pin;
+  this->driver = driver;
   this->authByteStart = authByteStart;
   this->authByteEnd = authByteEnd;
 
   Serial.println("setup transmitter");
-  vw_set_tx_pin(this->transmit_pin);
-  vw_setup(2000);	 // Bits per sec
+  // vw_set_tx_pin(this->transmit_pin);
+  // vw_setup(2000);	 // Bits per sec
+  if (!this->driver.init()) {
+    Serial.println("transmitter init failed");
+  }
+
   Serial.println("transmitter ready");
 }
 
@@ -23,16 +27,15 @@ void Transmitter::sendMessage(byte messageType, byte data) {
     data,
     this->authByteEnd};
 
-  Serial.print(this->messageID);
-  Serial.print("\t");
-  Serial.print(messageType);
-  Serial.print("\t");
-  Serial.print(data);
-  Serial.println("");
+  // for (uint8_t i = 0; i < strlen(msg); i++) {
+  //   Serial.print(msg[i]);
+  //   Serial.print("\t");
+  // }
+  // Serial.println();
 
   for(uint_fast8_t i=0; i<3;i++) {
-    vw_send((uint8_t *)msg, sizeof(msg));
-    vw_wait_tx(); // Wait until the whole message is gone
+    driver.send((byte *)msg, strlen(msg));
+    driver.waitPacketSent();
     delay(50);
   }
 
@@ -57,8 +60,8 @@ void Transmitter::sendSync(byte messageType, uint32_t sync) {
   Serial.print(sync);
   Serial.println("");
 
-  vw_send((uint8_t *)msg, sizeof(msg));
-  vw_wait_tx(); // Wait until the whole message is gone
+  driver.send((uint8_t *)msg, sizeof(msg));
+  driver.waitPacketSent();
 
   this->messageID++;
 }
