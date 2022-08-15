@@ -246,6 +246,15 @@ void loop() {
   uint_fast32_t driftSync = currentTime + driftOffset;
 
   if (driftSync > lastSync + 10000) {
+    // Serial.print(currentTime);
+    // Serial.print("\t");
+    // Serial.print(lastSync);
+    // Serial.print("\t");
+    // Serial.print(driftSync);
+    // Serial.print("\t");
+    // Serial.print((int)driftSync - (int)lastSync);
+    // Serial.println();
+
     lastSync = driftSync;
     transmitter.sendSync(typeSync, driftSync);
   }
