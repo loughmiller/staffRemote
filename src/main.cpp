@@ -112,8 +112,6 @@ void menuNext();
 void menuPrevious();
 void setAll(CRGB color);
 
-uint32_t adjustedMillis();
-
 ///////////////////////////////////////////////////////////////////
 // SETUP
 ///////////////////////////////////////////////////////////////////
@@ -245,7 +243,7 @@ bool lastReSwitchPin = HIGH;
 void loop() {
   setAll(0x000000);  // clear leds
 
-  uint_fast32_t currentTime = adjustedMillis();
+  uint_fast32_t currentTime = millis();
   uint_fast32_t driftSync = currentTime + driftOffset;
 
   if (driftSync > lastSync + 10000) {
@@ -354,7 +352,7 @@ void menuPrevious() {
 void stealColor() {
   Serial.println("stealColor");
   stolenHue = readHue();
-  colorStealTimestamp = adjustedMillis();
+  colorStealTimestamp = millis();
 }
 
 void sendColor() {
@@ -377,9 +375,6 @@ void setAll(CRGB color) {
   }
 }
 
-uint32_t adjustedMillis() {
-  return millis() * 0.69;
-}
 ///////////////////////////////////////////////////////////////////
 // COLOR SENSOR FUNCTIONS
 ///////////////////////////////////////////////////////////////////
