@@ -70,7 +70,7 @@ ArducamSSD1306 display(OLED_RESET); // FOR I2C
 #define DISPLAY_LED_PIN 1
 
 uint32_t lastSync = 0;
-uint32_t driftOffset = 86400000; // 24h
+uint32_t driftOffset = 0; //86400000; // 24h
 uint_fast8_t drift = 64;
 uint_fast8_t hue = 0;
 
@@ -148,9 +148,9 @@ void setup()
 
   // LED SETUP
   FastLED.addLeds<WS2812B, DISPLAY_LED_PIN, RGB>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );;
-  sparkle = new Sparkle(NUM_LEDS, 0, 244, leds, 557); // 5567
-  sparkle->setDriftOffset(driftOffset);
-
+  all = new Visualization(NUM_LEDS, 1, 0, 244, leds);
+  sparkle = new Sparkle(NUM_LEDS, 0, 0, leds, 557); // 5567
+  all->setValue(64);
 
   // MENU ITEMS
   menuItems[stealColorMenuIndex] = new MenuItemOnOff(display,
@@ -162,7 +162,7 @@ void setup()
     1);
 
   // probably can just set this off in the loop after a few seconds
-  menuItems[1] = new MenuItem(display,
+  menuItems[typeCycle] = new MenuItem(display,
     transmitter,
     typeCycle,
     "Cycle",
@@ -316,7 +316,10 @@ void loop() {
     }
   }
 
+  all->setCycle(menuItems[typeCycle]->getValue());
+
   sparkle->display(currentTime);
+  // all->setAll();
   FastLED.show();
 }
 

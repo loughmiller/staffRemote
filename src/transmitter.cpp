@@ -53,12 +53,32 @@ void Transmitter::sendSync(byte messageType, uint32_t sync) {
     (byte)(sync),
     this->authByteEnd};
 
-  Serial.print(this->messageID);
+  // Serial.print(msg[3] << 24);
+  // Serial.print("\t");
+  // Serial.print(msg[4] << 16);
+  // Serial.print("\t");
+  // Serial.print(msg[5] << 8);
+  // Serial.print("\t");
+  // Serial.print(msg[6]);
+  // Serial.println("\t");
+
+  // for (uint8_t i = 0; i < 8; i++) {
+  //   Serial.print(msg[i]);
+  //   Serial.print("\t");
+  // }
+  // Serial.println();
+
+  // Serial.print(this->messageID);
+  // Serial.print("\t");
+  // Serial.print(messageType);
+  // Serial.print("\t");
+  Serial.print(millis());
   Serial.print("\t");
-  Serial.print(messageType);
+  Serial.print("sync:");
   Serial.print("\t");
   Serial.print(sync);
   Serial.println("");
+
 
   driver.send((uint8_t *)msg, sizeof(msg));
   driver.waitPacketSent();
