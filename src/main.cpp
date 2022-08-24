@@ -317,9 +317,10 @@ void loop() {
   }
 
   all->setCycle(menuItems[typeCycle]->getValue());
+  all->cycleLoop(currentTime);
 
+  all->setAll();
   sparkle->display(currentTime);
-  // all->setAll();
   FastLED.show();
 }
 
