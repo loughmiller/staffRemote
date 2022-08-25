@@ -236,6 +236,7 @@ uint_fast16_t lastButtons = 0;
 float gauge = 0.5;
 
 bool lastReSwitchPin = HIGH;
+uint_fast32_t lastStateUpdate = 0;
 
 ///////////////////////////////////////////////////////////////////
 // LOOP
@@ -247,16 +248,23 @@ void loop() {
   uint_fast32_t driftSync = currentTime + driftOffset;
 
   if (driftSync > lastSync + 10000) {
-    // Serial.print(currentTime);
+    Serial.print(currentTime);
     // Serial.print("\t");
     // Serial.print(lastSync);
     // Serial.print("\t");
     // Serial.print(driftSync);
     // Serial.print("\t");
     // Serial.print((int)driftSync - (int)lastSync);
-    // Serial.println();
+
+    uint_fast8_t menuToUpdate = ((currentTime / 10000) % 6) + 1;
+    Serial.print("\t");
+    Serial.print(menuToUpdate);
+    Serial.println();
+
 
     lastSync = driftSync;
+
+    menuItems[menuToUpdate]->transmitUpdate();
     transmitter.sendSync(typeSync, driftSync);
   }
 
@@ -315,6 +323,19 @@ void loop() {
       }
     }
   }
+
+  // Regular Updates
+  if (currentTime > lastStateUpdate + 20000) {
+    lastStateUpdate = currentTime;
+    for (uint_fast8_t i = 1; i < menuItemsCount - 1; i++) {  // skip noop message 0
+      // menuItems[i]->transmitUpdate();
+    }
+
+    if (menuItems[typeCycle]->getValue() == 0) {
+      menuItems[hueMenuIndex]->transmitUpdate();
+    }
+  }
+
 
   all->setCycle(menuItems[typeCycle]->getValue());
   all->cycleLoop(currentTime);

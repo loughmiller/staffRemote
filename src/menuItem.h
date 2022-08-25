@@ -40,6 +40,7 @@ class MenuItem {
     void virtual incrementValue();
     void virtual decrementValue();
     void virtual setValue(uint_fast8_t value, bool display = true);
+    void transmitUpdate();
     uint_fast8_t getValue();
     void setIncrement(uint_fast8_t increment);
     void displayNameAndGauge();

@@ -30,11 +30,15 @@ void MenuItem::setValue(uint_fast8_t value, bool display) {
   Serial.println(value);
 
   this->value = value % 256;
-  this->transmitter->sendMessage(this->messageType, this->value);
+  this->transmitUpdate();
 
   if (display) {
     this->displayNameAndGauge();
   }
+}
+
+void MenuItem::transmitUpdate() {
+  this->transmitter->sendMessage(this->messageType, this->value);
 }
 
 uint_fast8_t MenuItem::getValue() {

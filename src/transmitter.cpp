@@ -33,10 +33,10 @@ void Transmitter::sendMessage(byte messageType, byte data) {
   // }
   // Serial.println();
 
-  for(uint_fast8_t i=0; i<3;i++) {
+  for(uint_fast8_t i=0; i<1;i++) {
     driver.send((byte *)msg, strlen(msg));
     driver.waitPacketSent();
-    delay(50);
+    // delay(50);
   }
 
   this->messageID++;
