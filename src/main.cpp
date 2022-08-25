@@ -140,7 +140,7 @@ void setup()
   uint_fast16_t colorSensorSetupTime = millis();
 
   // SETUP SERIAL CONNECTION FOR LOGGING
-  while(!Serial && millis() < (colorSensorSetupTime + 50000));
+  while(!Serial && millis() < (colorSensorSetupTime + 5000));
   Serial.println("setup");
 
   // ROTARY ENCODER SETUP
