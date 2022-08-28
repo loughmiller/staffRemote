@@ -96,6 +96,7 @@ const byte typeSync = 10;
 
 // MENU STATE
 const uint_fast8_t stealColorMenuIndex = 0;
+const uint_fast8_t cycleMenuIndex = 1;
 const uint_fast8_t hueMenuIndex = 7;
 const uint_fast8_t menuItemsCount = 8;
 MenuItem * menuItems[menuItemsCount];
@@ -149,7 +150,7 @@ void setup()
   // LED SETUP
   FastLED.addLeds<WS2812B, DISPLAY_LED_PIN, RGB>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );;
   all = new Visualization(NUM_LEDS, 1, 0, 244, leds);
-  sparkle = new Sparkle(NUM_LEDS, 0, 0, leds, 557); // 5567
+  sparkle = new Sparkle(NUM_LEDS, 0, 244, leds, 557); // 5567
   all->setValue(64);
 
   // MENU ITEMS
@@ -183,7 +184,7 @@ void setup()
     typeStreaks,
     "Streaks",
     "",
-    1,
+    2,
     8);
 
   menuItems[4] = new MenuItem(display,
@@ -326,27 +327,35 @@ void loop() {
         menuItems[currentMenuItem]->setValue(position);
       }
     }
-  }
 
-  // Regular Updates
-  if (currentTime > lastStateUpdate + 20000) {
-    lastStateUpdate = currentTime;
-    for (uint_fast8_t i = 1; i < menuItemsCount - 1; i++) {  // skip noop message 0
-      // menuItems[i]->transmitUpdate();
+    // Regular Updates
+    if (currentTime > lastStateUpdate + 20000) {
+      lastStateUpdate = currentTime;
+      for (uint_fast8_t i = 1; i < menuItemsCount - 1; i++) {  // skip noop message 0
+        // menuItems[i]->transmitUpdate();
+      }
+
+      if (menuItems[hueMenuIndex]->getValue() == 0) {
+        menuItems[hueMenuIndex]->transmitUpdate();
+      }
     }
 
-    if (menuItems[typeCycle]->getValue() == 0) {
-      menuItems[hueMenuIndex]->transmitUpdate();
+
+    if (menuItems[cycleMenuIndex]->getValue() != 0) {
+      all->setCycle(menuItems[typeCycle]->getValue());
+      all->cycleLoop(currentTime);
+      sparkle->setCycle(menuItems[typeCycle]->getValue());
+      sparkle->cycleLoop(currentTime);
+    } else {
+      all->setHue(menuItems[typeHue]->getValue());
     }
+
+    // all->setAll();
+    sparkle->display(currentTime);
   }
 
-
-  all->setCycle(menuItems[typeCycle]->getValue());
-  all->cycleLoop(currentTime);
-
-  all->setAll();
-  sparkle->display(currentTime);
   FastLED.show();
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -382,9 +391,11 @@ void stealColor() {
   Serial.println("stealColor");
   stolenHue = readHue();
   colorStealTimestamp = millis();
+  menuItems[typeHue]->setValue(stolenHue);
 }
 
 void sendColor() {
+  menuItems[typeCycle]->setValue(0);
   menuItems[hueMenuIndex]->setValue(stolenHue, false);
   transmitter.sendMessage(typeSteal, stolenHue);
   colorStealTimestamp = 0;
