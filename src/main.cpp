@@ -282,7 +282,11 @@ void loop() {
   // RELEASE BUTTON
   if (lastReSwitchPin == LOW && currentReSwitchPin == HIGH) {
     if (currentMenuItem == stealColorMenuIndex && menuItems[stealColorMenuIndex]->getValue() > 0) {
-      sendColor();
+      if (currentTime - colorStealTimestamp > 4300) {
+        sendColor();
+      } else {
+        colorStealTimestamp = 0;
+      }
     } else {
       myEnc.write(menuItems[currentMenuItem]->getValue());
     }
