@@ -163,7 +163,7 @@ void setup()
     1);
 
   // probably can just set this off in the loop after a few seconds
-  menuItems[typeCycle] = new MenuItem(display,
+  menuItems[cycleMenuIndex] = new MenuItem(display,
     transmitter,
     typeCycle,
     "Cycle",
@@ -192,8 +192,8 @@ void setup()
     typeDensity,
     "Music",
     "",
-    23,
-    4);
+    6,
+    1);
 
   menuItems[5] = new MenuItem(display,
     transmitter,
@@ -248,7 +248,7 @@ void loop() {
   uint_fast32_t currentTime = millis();
   uint_fast32_t driftSync = currentTime + driftOffset;
 
-  if (driftSync > lastSync + 10000) {
+  if (driftSync > lastSync + 4000) {
     Serial.print(currentTime);
     // Serial.print("\t");
     // Serial.print(lastSync);
@@ -257,7 +257,7 @@ void loop() {
     // Serial.print("\t");
     // Serial.print((int)driftSync - (int)lastSync);
 
-    uint_fast8_t menuToUpdate = ((currentTime / 10000) % 6) + 1;
+    uint_fast8_t menuToUpdate = ((currentTime / 4000) % 6) + 1;
     Serial.print("\t");
     Serial.print(menuToUpdate);
     Serial.println();
@@ -342,12 +342,12 @@ void loop() {
 
 
     if (menuItems[cycleMenuIndex]->getValue() != 0) {
-      all->setCycle(menuItems[typeCycle]->getValue());
+      all->setCycle(menuItems[cycleMenuIndex]->getValue());
       all->cycleLoop(currentTime);
-      sparkle->setCycle(menuItems[typeCycle]->getValue());
+      sparkle->setCycle(menuItems[cycleMenuIndex]->getValue());
       sparkle->cycleLoop(currentTime);
     } else {
-      all->setHue(menuItems[typeHue]->getValue());
+      all->setHue(menuItems[hueMenuIndex]->getValue());
     }
 
     // all->setAll();
@@ -391,11 +391,11 @@ void stealColor() {
   Serial.println("stealColor");
   stolenHue = readHue();
   colorStealTimestamp = millis();
-  menuItems[typeHue]->setValue(stolenHue);
+  menuItems[hueMenuIndex]->setValue(stolenHue);
 }
 
 void sendColor() {
-  menuItems[typeCycle]->setValue(0);
+  menuItems[cycleMenuIndex]->setValue(0);
   menuItems[hueMenuIndex]->setValue(stolenHue, false);
   transmitter.sendMessage(typeSteal, stolenHue);
   colorStealTimestamp = 0;
