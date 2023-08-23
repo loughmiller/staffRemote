@@ -93,6 +93,8 @@ const byte typeStreaks = 7;
 const byte typeSolid = 8;
 const byte typeSteal = 9;
 const byte typeSync = 10;
+const byte typeHue2 = 11;
+const byte typeCycle2 = 12;
 
 // MENU STATE
 const uint_fast8_t stealColorMenuIndex = 0;
@@ -208,7 +210,7 @@ void setup()
     typeSolid,
     "Solid",
     "",
-    0,
+    1,
     1);
 
   menuItems[hueMenuIndex] = new MenuItem(display,
@@ -216,12 +218,14 @@ void setup()
     typeHue,
     "Hue",
     "",
-    0,
+    1,
     2);
 
   simpleDisplay("booting   complete");
 
   menuItems[currentMenuItem]->displayNameAndGauge();
+  Serial.println("setup complete");
+  Serial.println("MAGIC WAND");
 }
 ///////////////////////////////////////////////////////////////////
 // \ SETUP END /
@@ -249,7 +253,7 @@ void loop() {
   uint_fast32_t driftSync = currentTime + driftOffset;
 
   if (driftSync > lastSync + 4000) {
-    Serial.print(currentTime);
+    // Serial.print(currentTime);
     // Serial.print("\t");
     // Serial.print(lastSync);
     // Serial.print("\t");
@@ -257,15 +261,25 @@ void loop() {
     // Serial.print("\t");
     // Serial.print((int)driftSync - (int)lastSync);
 
-    uint_fast8_t menuToUpdate = ((currentTime / 4000) % 6) + 1;
-    Serial.print("\t");
-    Serial.print(menuToUpdate);
-    Serial.println();
+    uint_fast8_t menuToUpdate = (((currentTime / 4000) % 7) + 1);
+    // Serial.print("menuToUpdate: ");
+    // Serial.print(menuToUpdate);
+    // Serial.println();
 
+    // HACK HUE TRANMISSION
+    if (menuToUpdate == hueMenuIndex) {
+      // Serial.print("hue: ");
+      // Serial.println(menuItems[hueMenuIndex]->getValue());
+      transmitter.sendMessage(typeHue2, (byte)menuItems[hueMenuIndex]->getValue());
+    } else if (menuToUpdate == cycleMenuIndex) {
+      // Serial.print("cycle: ");
+      // Serial.println(menuItems[cycleMenuIndex]->getValue());
+      transmitter.sendMessage(typeCycle2, (byte)menuItems[cycleMenuIndex]->getValue());
+    } else {
+      menuItems[menuToUpdate]->transmitUpdate();
+    }
 
     lastSync = driftSync;
-
-    menuItems[menuToUpdate]->transmitUpdate();
     transmitter.sendSync(typeSync, driftSync);
   }
 
@@ -328,17 +342,17 @@ void loop() {
       }
     }
 
-    // Regular Updates
-    if (currentTime > lastStateUpdate + 20000) {
-      lastStateUpdate = currentTime;
-      for (uint_fast8_t i = 1; i < menuItemsCount - 1; i++) {  // skip noop message 0
-        // menuItems[i]->transmitUpdate();
-      }
+    // // Regular Updates
+    // if (currentTime > lastStateUpdate + 20000) {
+    //   lastStateUpdate = currentTime;
+    //   for (uint_fast8_t i = 1; i < menuItemsCount - 1; i++) {  // skip noop message 0
+    //     // menuItems[i]->transmitUpdate();
+    //   }
 
-      if (menuItems[hueMenuIndex]->getValue() == 0) {
-        menuItems[hueMenuIndex]->transmitUpdate();
-      }
-    }
+    //   if (menuItems[hueMenuIndex]->getValue() == 0) {
+    //     menuItems[hueMenuIndex]->transmitUpdate();
+    //   }
+    // }
 
 
     if (menuItems[cycleMenuIndex]->getValue() != 0) {
@@ -391,11 +405,9 @@ void stealColor() {
   Serial.println("stealColor");
   stolenHue = readHue();
   colorStealTimestamp = millis();
-  menuItems[hueMenuIndex]->setValue(stolenHue);
 }
 
 void sendColor() {
-  menuItems[cycleMenuIndex]->setValue(0);
   menuItems[hueMenuIndex]->setValue(stolenHue, false);
   transmitter.sendMessage(typeSteal, stolenHue);
   colorStealTimestamp = 0;

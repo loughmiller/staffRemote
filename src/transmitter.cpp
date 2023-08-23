@@ -18,7 +18,7 @@ Transmitter::Transmitter(RH_ASK driver,
 }
 
 void Transmitter::sendMessage(byte messageType, byte data) {
-  Serial.println("Transmitter::sendMessage");
+  // Serial.println("Transmitter::sendMessage");
   if (messageType == 0) return;  // ignore type
 
   byte msg[5] = {this->authByteStart,
@@ -43,7 +43,7 @@ void Transmitter::sendMessage(byte messageType, byte data) {
 }
 
 void Transmitter::sendSync(byte messageType, uint32_t sync) {
-  Serial.println("Transmitter::sendSync");
+  // Serial.println("Transmitter::sendSync");
   byte msg[8] = {this->authByteStart,
     this->messageID,
     messageType,
@@ -72,12 +72,12 @@ void Transmitter::sendSync(byte messageType, uint32_t sync) {
   // Serial.print("\t");
   // Serial.print(messageType);
   // Serial.print("\t");
-  Serial.print(millis());
-  Serial.print("\t");
-  Serial.print("sync:");
-  Serial.print("\t");
-  Serial.print(sync);
-  Serial.println("");
+  // Serial.print(millis());
+  // Serial.print("\t");
+  // Serial.print("sync:");
+  // Serial.print("\t");
+  // Serial.print(sync);
+  // Serial.println("");
 
 
   driver.send((uint8_t *)msg, sizeof(msg));

@@ -38,6 +38,10 @@ void MenuItem::setValue(uint_fast8_t value, bool display) {
 }
 
 void MenuItem::transmitUpdate() {
+  // Serial.print("transmitUpdate\t");
+  // Serial.print(this->messageType);
+  // Serial.print("\t");
+  // Serial.println(this->value);
   this->transmitter->sendMessage(this->messageType, this->value);
 }
 
